@@ -1,0 +1,25 @@
+import { SlashCommandBuilder } from 'discord.js';
+import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
+import { logger } from '../../utils/logger.js';
+import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
+
+import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+export default {
+    data: new SlashCommandBuilder()
+    .setName("moneda")
+    .setDescription("Lanza una moneda (cara o cruz)."),
+  category: 'Fun',
+
+  async execute(interaction, config, client) {
+    const result = Math.random() < 0.5 ? "Heads" : "Tails";
+    const emoji = result === "Heads" ? "🪙" : "🔮";
+
+    const embed = successEmbed(
+      "Heads or Tails?",
+      `The coin landed on... **${result}** ${emoji}!`,
+    );
+
+    await InteractionAyudaer.safeReply(interaction, { embeds: [embed] });
+    logger.debug(`Flip command executed by user ${interaction.user.id} in guild ${interaction.guildId}`);
+  },
+};
