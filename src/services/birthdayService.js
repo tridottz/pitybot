@@ -68,7 +68,7 @@ export async function setBirthday(client, guildId, userId, month, day) {
       throw new TitanBotError(
         'Failed to save birthday to database',
         ErrorTypes.DATABASE,
-        'Failed to set your birthday. Please try again later.',
+        'No se pudo guardar tu cumpleaños. Inténtalo más tarde.',
         { userId, guildId, month, day }
       );
     }
@@ -102,7 +102,7 @@ export async function setBirthday(client, guildId, userId, month, day) {
   }
 }
 
-export async function getUsarBirthday(client, guildId, userId) {
+export async function getUserBirthday(client, guildId, userId) {
   try {
     const birthdays = await getGuildBirthdays(client, guildId);
     const birthdayData = birthdays[userId];
@@ -117,7 +117,7 @@ export async function getUsarBirthday(client, guildId, userId) {
       monthName: getMonthName(birthdayData.month)
     };
   } catch (error) {
-    logger.error('Error in getUsarBirthday service', {
+    logger.error('Error in getUserBirthday service', {
       error: error.message,
       userId,
       guildId
@@ -159,7 +159,7 @@ export async function getAllBirthdays(client, guildId) {
 export async function deleteBirthday(client, guildId, userId) {
   try {
     
-    const birthday = await getUsarBirthday(client, guildId, userId);
+    const birthday = await getUserBirthday(client, guildId, userId);
     
     if (!birthday) {
       return {
@@ -173,7 +173,7 @@ export async function deleteBirthday(client, guildId, userId) {
       throw new TitanBotError(
         'Failed to delete birthday from database',
         ErrorTypes.DATABASE,
-        'Failed to remove your birthday. Please try again.',
+        'No se pudo eliminar tu cumpleaños. Inténtalo más tarde.',
         { userId, guildId }
       );
     }
@@ -277,7 +277,7 @@ export async function checkBirthdays(client) {
   const currentDay = today.getUTCDate();
 
   if (process.env.NODE_ENV !== 'production') {
-    logger.debug(`🎂 Ejecutaning daily birthday check for UTC: ${currentMonth}/${currentDay}.`);
+    logger.debug(`🎂 Running daily birthday check for UTC: ${currentMonth}/${currentDay}.`);
   }
 
   for (const [guildId, guild] of client.guilds.cache) {
@@ -318,7 +318,7 @@ export async function checkBirthdays(client) {
         await client.db.set(trackingKey, updatedTrackingData);
       }
 
-      // Usa the canonical birthday storage (guild:<id>:birthdays) that set/remove commands write to.
+      // Use the canonical birthday storage (guild:<id>:birthdays) that set/remove commands write to.
       const birthdays = (await getGuildBirthdays(client, guildId)) || {};
       const birthdayMembers = [];
       for (const [userId, userData] of Object.entries(birthdays)) {
@@ -344,8 +344,8 @@ export async function checkBirthdays(client) {
         
         await channel.send({
           embeds: [{
-            title: '🎉 Happy Birthday! 🎂',
-            description: `A very happy birthday to ${mentionList}! Wishing you an amazing day! 🎈`,
+            title: '🎉 ¡Feliz cumpleaños! 🎂',
+            description: `¡Feliz cumpleaños, ${mentionList}! Que tengas un día increíble. 🎈`,
             color: 0xff69b4,
             footer: { text: 'Birthday Bot' },
             timestamp: new Date()

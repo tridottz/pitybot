@@ -1,34 +1,34 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
-import { getEconomyData, getMaxBankCapacity } from '../../utils/economia.js';
+import { getEconomyData, getMaxBankCapacity } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
 import { logger } from '../../utils/logger.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('saldo')
+        .setName('balance')
         .setDescription("Consulta tu saldo o el de otra persona")
-        .addUsarOption(option =>
+        .addUserOption(option =>
             option
                 .setName('user')
-                .setDescription('Usar to check balance for')
+                .setDescription('Usuario cuyo saldo quieres consultar')
                 .setRequired(false)
         ),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionAyudaer.safeDefer(interaction);
+        const deferred = await InteractionHelper.safeDefer(interaction);
         if (!deferred) return;
 
-        const userOption = interaction.options.getUsar("user");
-        const targetUsar = userOption || interaction.user;
+        const userOption = interaction.options.getUser("user");
+        const targetUser = userOption || interaction.user;
         const guildId = interaction.guildId;
 
-        logger.info(`[ECONOMY] Balance check - userOption: ${userOption?.id || 'null'}, targetUsar: ${targetUsar.id}, guildId: ${guildId}, isPrefix: ${!!interaction._commandStartTime}`);
+        logger.info(`[ECONOMY] Balance check - userOption: ${userOption?.id || 'null'}, targetUser: ${targetUser.id}, guildId: ${guildId}, isPrefix: ${!!interaction._commandStartTime}`);
 
-        logger.debug(`[ECONOMY] Balance check for ${targetUsar.id}`, { userId: targetUsar.id, guildId });
+        logger.debug(`[ECONOMY] Balance check for ${targetUser.id}`, { userId: targetUser.id, guildId });
 
-        if (targetUsar.bot) {
+        if (targetUser.bot) {
             throw createError(
                 "Bot user queried for balance",
                 ErrorTypes.VALIDATION,
@@ -36,7 +36,7 @@ export default {
             );
         }
 
-        const userData = await getEconomyData(client, guildId, targetUsar.id);
+        const userData = await getEconomyData(client, guildId, targetUser.id);
 
         logger.info(`[ECONOMY] Economy data retrieved - userData:`, userData);
 
@@ -44,8 +44,8 @@ export default {
             throw createError(
                 "Failed to load economy data",
                 ErrorTypes.DATABASE,
-                "Failed to load economy data. Please try again later.",
-                { userId: targetUsar.id, guildId }
+                "No se pudieron cargar los datos de economía. Inténtalo más tarde.",
+                { userId: targetUser.id, guildId }
             );
         }
 
@@ -55,17 +55,17 @@ export default {
         const bank = typeof userData.bank === 'number' ? userData.bank : 0;
 
             const embed = createEmbed({
-                title: `${targetUsar.username}'s Balance`,
-                description: `Here is the current financial status for ${targetUsar.username}.`,
+                title: `Saldo de ${targetUser.username}`,
+                description: `Este es el estado actual de las finanzas de ${targetUser.username}.`,
             })
                 .addFields(
                     {
-                        name: "💵 Cash",
+                        name: "💵 Efectivo",
                         value: `$${wallet.toLocaleString()}`,
                         inline: true,
                     },
                     {
-                        name: "🏦 Bank",
+                        name: "🏦 Banco",
                         value: `$${bank.toLocaleString()} / $${maxBank.toLocaleString()}`,
                         inline: true,
                     },
@@ -80,8 +80,8 @@ export default {
                     iconURL: interaction.user.displayAvatarURL(),
                 });
 
-            logger.info(`[ECONOMY] Balance retrieved`, { userId: targetUsar.id, wallet, bank });
+            logger.info(`[ECONOMY] Balance retrieved`, { userId: targetUser.id, wallet, bank });
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
     }, { command: 'balance' })
 };

@@ -1,5 +1,5 @@
-import musicButtonHandler from '../../../handlers/musicaButtons.js';
-import { MUSIC_BUTTON_IDS } from '../../../services/musica/musicaEmbeds.js';
+import musicButtonHandler from '../../../handlers/musicButtons.js';
+import { MUSIC_BUTTON_IDS } from '../../../services/music/musicEmbeds.js';
 
 const buttonIds = [
     MUSIC_BUTTON_IDS.PAUSE,

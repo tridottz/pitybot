@@ -3,11 +3,11 @@ import { createEmbed, errorEmbed, warningEmbed } from '../../utils/embeds.js';
 import { getConfirmationButtons } from '../../utils/components.js';
 import { logger } from '../../utils/logger.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     slashOnly: true,
     data: new SlashCommandBuilder()
-        .setName('borrar-datos')
+        .setName('wipedata')
         .setDescription('Elimina todos tus datos personales del bot (acción irreversible)'),
 
     async execute(interaction, guildConfig, client) {
@@ -27,7 +27,7 @@ export default {
 
         const confirmButtons = getConfirmationButtons('wipedata');
 
-        await InteractionAyudaer.safeReply(interaction, {
+        await InteractionHelper.safeReply(interaction, {
             embeds: [embed],
             components: [confirmButtons],
             flags: MessageFlags.Ephemeral

@@ -9,7 +9,7 @@ import {
   buildStandardLogEmbed,
   fieldsToLines,
   splitComparisonFields,
-} from '../utils/registros/logEmbeds.js';
+} from '../utils/logging/logEmbeds.js';
 
 const LOG_DESTINATIONS = ['audit', 'applications', 'reports'];
 
@@ -416,7 +416,7 @@ export async function setLogChannel(client, guildId, destination, channelId) {
   }
 }
 
-/** @deprecated Usa setLogChannel(client, guildId, 'audit', channelId) */
+/** @deprecated Use setLogChannel(client, guildId, 'audit', channelId) */
 export async function setLoggingChannel(client, guildId, channelId) {
   return setLogChannel(client, guildId, 'audit', channelId);
 }

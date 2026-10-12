@@ -2,12 +2,12 @@ import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
     .setName("avatar")
     .setDescription("Muestra el avatar de un usuario")
-    .addUsarOption((option) =>
+    .addUserOption((option) =>
       option
         .setName("target")
         .setDescription(
@@ -16,19 +16,19 @@ export default {
     ),
 
   async execute(interaction) {
-    const user = interaction.options.getUsar("target") || interaction.user;
+    const user = interaction.options.getUser("target") || interaction.user;
     const avatarUrl = user.displayAvatarURL({ size: 2048, dynamic: true });
 
     const embed = createEmbed({ 
-      title: `${user.username}'s Avatar`, 
-      description: `[Download Link](${avatarUrl})` 
+      title: `Avatar de ${user.username}`,
+      description: `[Enlace de descarga](${avatarUrl})`
     })
       .setImage(avatarUrl);
 
-    await InteractionAyudaer.safeReply(interaction, { embeds: [embed] });
+    await InteractionHelper.safeReply(interaction, { embeds: [embed] });
     logger.info(`Avatar command executed`, {
       userId: interaction.user.id,
-      targetUsarId: user.id,
+      targetUserId: user.id,
       guildId: interaction.guildId
     });
   }

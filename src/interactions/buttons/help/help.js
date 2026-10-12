@@ -2,7 +2,7 @@ import {
   helpBackButton,
   helpBugReportButton,
   helpPaginationButton,
-} from '../../../handlers/ayuda/ayudaButtons.js';
+} from '../../../handlers/help/helpButtons.js';
 
 const paginationIds = [
   'help-page_first',

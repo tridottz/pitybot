@@ -4,7 +4,7 @@ import {
     ButtonBuilder,
     ButtonStyle,
 } from "discord.js";
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { createEmbed } from "../../utils/embeds.js";
 import {
     createSelectMenu,
@@ -20,9 +20,6 @@ const CATEGORY_SELECT_ID = "help-category-select";
 const ALL_COMMANDS_ID = "help-all-commands";
 const BUG_REPORT_BUTTON_ID = "help-bug-report";
 const HELP_MENU_TIMEOUT_MS = 5 * 60 * 1000;
-
-const CATEGORY_LABELS = { Core: 'General', Moderation: 'Moderación', Economy: 'Economía', Fun: 'Diversión', Leveling: 'Niveles', Utility: 'Utilidades', Ticket: 'Tickets', Welcome: 'Bienvenida', Giveaway: 'Sorteos', Counter: 'Contador', Tools: 'Herramientas', Search: 'Búsqueda', 'Reaction Roles': 'Roles por reacción', Community: 'Comunidad', Birthday: 'Cumpleaños', 'Join To Create': 'Crear canal al entrar', Verification: 'Verificación' };
-
 
 const CATEGORY_ICONS = {
     Core: "ℹ️",
@@ -52,8 +49,8 @@ function formatCategoryName(rawCategory) {
         .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export async function createInitialAyudaMenu(client) {
-    const commandsPath = path.join(__dirname, "../../comandos");
+export async function createInitialHelpMenu(client) {
+    const commandsPath = path.join(__dirname, "../../commands");
     const categoryDirs = (
         await fs.readdir(commandsPath, { withFileTypes: true })
     )
@@ -68,11 +65,11 @@ export async function createInitialAyudaMenu(client) {
             value: ALL_COMMANDS_ID,
         },
         ...categoryDirs.map((category) => {
-            const categoryName = CATEGORY_LABELS[category] || formatCategoryName(category);
+            const categoryName = formatCategoryName(category);
             const icon = CATEGORY_ICONS[categoryName] || "🔍";
             return {
                 label: `${icon} ${categoryName}`,
-                description: `Ver los comandos de la categoría ${categoryName} category`,
+                description: `Consulta los comandos de la categoría ${categoryName}`,
                 value: category,
             };
         }),
@@ -80,25 +77,25 @@ export async function createInitialAyudaMenu(client) {
 
     const botName = client?.user?.username || "Bot";
     const embed = createEmbed({
-        title: `📖 ${botName} Ayuda`,
-        description: 'Set up your server, pick what to enable, then browse commands below.',
+        title: `📖 Ayuda de ${botName}`,
+        description: 'Configura tu servidor, elige qué funciones activar y consulta los comandos a continuación.',
         color: 'primary',
         thumbnail: client.user?.displayAvatarURL?.({ size: 1024 }),
         fields: [
             {
                 name: '🚀 Primeros pasos',
                 value: [
-                    '**1. Iniciar configuración** — Ejecuta `/configurar` para configurar el prefijo, el rol de moderación y los registros.',
-                    '**2. Activar funciones** — Usa `/comandos dashboard` para activar o desactivar categorías.',                    '**3. Explorar comandos** — Usa the menu below to view categories and commands.',
+                    '**1. Inicia la configuración** — Ejecuta `/configwizard` para configurar el prefijo, el rol de moderación y los registros.',
+                    '**2. Activa funciones** — Usa `/commands dashboard` para activar o desactivar categorías.',                    '**3. Consulta los comandos** — Usa el menú para ver las categorías y sus comandos.',
                 ].join('\n'),
                 inline: false,
             },
             {
                 name: 'ℹ️ Cómo funciona',
                 value: [
-                    '• Los comandos del panel permiten administrar cada función visualmente',
+                    '• Los paneles te permiten administrar visualmente cada función',
                     '• La configuración se guarda por servidor',
-                    '• Los comandos de barra y los prefijos funcionan una vez activados',
+                    '• Al activarlos, puedes usar comandos de barra y prefijos',
                 ].join('\n'),
                 inline: false,
             },
@@ -117,7 +114,7 @@ export async function createInitialAyudaMenu(client) {
 
     const bugReportButton = new ButtonBuilder()
         .setCustomId(BUG_REPORT_BUTTON_ID)
-        .setLabel("Reportar error")
+        .setLabel("Reportar un error")
         .setStyle(ButtonStyle.Danger);
 
     const supportButton = new ButtonBuilder()
@@ -127,7 +124,7 @@ export async function createInitialAyudaMenu(client) {
 
     const selectRow = createSelectMenu(
         CATEGORY_SELECT_ID,
-        "Selecciona para ver los comandos",
+        "Selecciona una categoría para ver sus comandos",
         options,
     );
 
@@ -145,39 +142,39 @@ export async function createInitialAyudaMenu(client) {
 export default {
     slashOnly: true,
     data: new SlashCommandBuilder()
-        .setName("ayuda")
+        .setName("help")
         .setDescription("Muestra el menú de ayuda con todos los comandos disponibles"),
 
     async execute(interaction, guildConfig, client) {
         
         const { MessageFlags } = await import('discord.js');
-        await InteractionAyudaer.safeDefer(interaction);
+        await InteractionHelper.safeDefer(interaction);
         
-        const { embeds, components } = await createInitialAyudaMenu(client);
+        const { embeds, components } = await createInitialHelpMenu(client);
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds,
             components,
         });
 
         setTimeout(async () => {
             try {
-                if (!InteractionAyudaer.isInteractionValid(interaction)) {
+                if (!InteractionHelper.isInteractionValid(interaction)) {
                     return;
                 }
 
                 const closedEmbed = createEmbed({
-                    title: "Ayuda menu closed",
-                    description: "Ayuda menu has been closed, use /ayuda again.",
+                    title: "Menú de ayuda cerrado",
+                    description: "El menú de ayuda se cerró. Usa /help para abrirlo de nuevo.",
                     color: "secondary",
                 });
 
-                await InteractionAyudaer.safeEditReply(interaction, {
+                await InteractionHelper.safeEditReply(interaction, {
                     embeds: [closedEmbed],
                     components: [],
                 });
             } catch (error) {
-                logger.debug('Ayuda menu close edit failed (interaction may have expired):', error?.message);
+                logger.debug('Help menu close edit failed (interaction may have expired):', error?.message);
             }
         }, HELP_MENU_TIMEOUT_MS);
     },

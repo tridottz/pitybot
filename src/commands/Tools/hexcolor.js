@@ -3,11 +3,11 @@ import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/
 import { logger } from '../../utils/logger.js';
 import { getColor } from '../../config/bot.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
     data: new SlashCommandBuilder()
-        .setName('color-hex')
+        .setName('hexcolor')
         .setDescription('Genera un color hexadecimal aleatorio con vista previa')
         .addStringOption(option =>
             option.setName('color')
@@ -15,7 +15,7 @@ export default {
                 .setRequired(false)),
 
     async execute(interaction) {
-        await InteractionAyudaer.safeExecute(
+        await InteractionHelper.safeExecute(
             interaction,
             async () => {
                 let hexColor = interaction.options.getString('color');
@@ -27,7 +27,7 @@ export default {
                 } else {
                     hexColor = hexColor.replace('#', '');
                     if (!/^[0-9A-Fa-f]{3,6}$/.test(hexColor)) {
-                        return await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please provide a valid hex code.\n\n**Valid formats:**\n• `#FF5733` (with hash)\n• `FF5733` (without hash)\n• `F57` (3-digit shorthand)\n\n**Invalid:** `#GG5733` (G is not a hex digit)' });
+                        return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Proporciona un código hexadecimal válido.\n\n**Formatos válidos:**\n• `#FF5733` (con numeral)\n• `FF5733` (sin numeral)\n• `F57` (abreviatura de 3 dígitos)\n\n**No válido:** `#GG5733` (G no es un dígito hexadecimal)' });
                     }
 
                     if (hexColor.length === 3) {
@@ -59,12 +59,12 @@ export default {
                     .setImage(colorPreviewUrl);
 
                 if (isRandom) {
-                    embed.setFooter({ text: 'Randomly generated color' });
+                    embed.setFooter({ text: 'Color generado aleatoriamente' });
                 }
 
-                await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+                await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
             },
-            'Failed to generate color information. Please try again.',
+            'No se pudo generar la información del color. Inténtalo de nuevo.',
             {
                 autoDefer: true,
                 deferOptions: { flags: MessageFlags.Ephemeral }

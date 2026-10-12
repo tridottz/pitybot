@@ -1,24 +1,24 @@
 // serverstatsService.js
 
 import { logger } from '../utils/logger.js';
-import { logEvent, EVENT_TYPES } from './registrosService.js';
-import { formatLogLine } from '../utils/registros/logEmbeds.js';
+import { logEvent, EVENT_TYPES } from './loggingService.js';
+import { formatLogLine } from '../utils/logging/logEmbeds.js';
 import { getServerCountersKey } from '../utils/database/keys.js';
 import botConfig from '../config/bot.js';
 
 export const COUNTER_TYPE_CONFIG = {
   members: {
-    label: 'Members + Bots',
-    baseName: 'Members & Bots',
+    label: 'Miembros y bots',
+    baseName: 'Miembros y bots',
     emoji: '👥'
   },
   members_only: {
-    label: 'Members Only',
-    baseName: 'Members',
+    label: 'Solo miembros',
+    baseName: 'Miembros',
     emoji: '👤'
   },
   bots: {
-    label: 'Bots Only',
+    label: 'Solo bots',
     baseName: 'Bots',
     emoji: '🤖'
   }
@@ -26,8 +26,8 @@ export const COUNTER_TYPE_CONFIG = {
 
 function getCounterConfig(type) {
   return COUNTER_TYPE_CONFIG[type] || {
-    label: 'Unknown',
-    baseName: 'Counter',
+    label: 'Desconocido',
+    baseName: 'Contador',
     emoji: '❓'
   };
 }
@@ -163,7 +163,7 @@ export async function updateCounter(client, guild, counter) {
 
     const count = await getCounterCount(guild, type);
     if (count === null) {
-      logger.error('Unknown counter type:', type);
+      logger.error('Desconocido counter type:', type);
       return false;
     }
 
@@ -190,7 +190,7 @@ export async function updateCounter(client, guild, counter) {
             guildId: guild.id,
             eventType: EVENT_TYPES.COUNTER_UPDATE,
             data: {
-              title: 'Counter Updated',
+              title: 'Contador actualizado',
               lines: [
                 formatLogLine('Type', getCounterTypeLabel(type)),
                 formatLogLine('Count', count.toString()),

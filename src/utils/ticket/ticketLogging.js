@@ -6,8 +6,8 @@ import { logger } from '../logger.js';
 import {
   buildStandardLogEmbed,
   formatRatingStars,
-  resolveUsarAuthor,
-} from '../registros/logEmbeds.js';
+  resolveUserAuthor,
+} from '../logging/logEmbeds.js';
 
 export async function logTicketEvent({ client, guildId, event }) {
   try {
@@ -98,18 +98,18 @@ function getLogChannelForEventType(config, eventType) {
 }
 
 const TICKET_EVENT_STYLES = {
-  open: { color: 0x5865F2, title: 'Ticket Created' },
-  close: { color: 0xED4245, title: 'Ticket Closed' },
-  delete: { color: 0x8b0000, title: 'Ticket Deleted' },
-  claim: { color: 0x5865F2, title: 'Ticket Claimed' },
-  unclaim: { color: 0xFAA61A, title: 'Ticket Unclaimed' },
+  open: { color: 0x5865F2, title: 'Ticket creado' },
+  close: { color: 0xED4245, title: 'Ticket cerrado' },
+  delete: { color: 0x8b0000, title: 'Ticket eliminado' },
+  claim: { color: 0x5865F2, title: 'Ticket asignado' },
+  unclaim: { color: 0xFAA61A, title: 'Ticket liberado' },
   priority: { color: 0x9b59b6, title: 'Priority Updated' },
-  transcript: { color: 0x57F287, title: 'Transcript Generated' },
+  transcript: { color: 0x57F287, title: 'Transcripción generada' },
   feedback: { color: 0x57F287, title: 'Feedback Received' },
 };
 
 async function createTicketLogEmbed(guild, event) {
-  const style = TICKET_EVENT_STYLES[event.type] || { color: 0x95a5a6, title: 'Ticket Event' };
+  const style = TICKET_EVENT_STYLES[event.type] || { color: 0x95a5a6, title: 'Evento del ticket' };
   const ticketNumber = event.ticketNumber || event.ticketId;
   const ticketRef = ticketNumber ? `#${ticketNumber}` : 'Unknown';
   const channelMention = event.ticketId ? `<#${event.ticketId}>` : null;
@@ -123,7 +123,7 @@ async function createTicketLogEmbed(guild, event) {
 
   switch (event.type) {
     case 'open':
-      author = await resolveUsarAuthor(guild.client, event.userId);
+      author = await resolveUserAuthor(guild.client, event.userId);
       inlineFields = [
         { name: 'Ticket', value: ticketRef, inline: true },
         { name: 'Creator', value: userMention || 'Unknown', inline: true },
@@ -137,7 +137,7 @@ async function createTicketLogEmbed(guild, event) {
       break;
 
     case 'close':
-      author = await resolveUsarAuthor(guild.client, event.executorId);
+      author = await resolveUserAuthor(guild.client, event.executorId);
       inlineFields = [
         { name: 'Ticket', value: ticketRef, inline: true },
         { name: 'Closed by', value: executorMention || 'Unknown', inline: true },
@@ -151,7 +151,7 @@ async function createTicketLogEmbed(guild, event) {
       break;
 
     case 'delete':
-      author = await resolveUsarAuthor(guild.client, event.executorId);
+      author = await resolveUserAuthor(guild.client, event.executorId);
       inlineFields = [
         { name: 'Ticket', value: ticketRef, inline: true },
         { name: 'Deleted by', value: executorMention || 'Unknown', inline: true },
@@ -160,7 +160,7 @@ async function createTicketLogEmbed(guild, event) {
 
     case 'claim':
     case 'unclaim':
-      author = await resolveUsarAuthor(guild.client, event.executorId);
+      author = await resolveUserAuthor(guild.client, event.executorId);
       inlineFields = [
         { name: 'Ticket', value: ticketRef, inline: true },
         {
@@ -176,7 +176,7 @@ async function createTicketLogEmbed(guild, event) {
       const priorityLabel = event.priority
         ? `${priorityEmojis[event.priority] || '⚪'} ${event.priority.charAt(0).toUpperCase()}${event.priority.slice(1)}`
         : 'Unknown';
-      author = await resolveUsarAuthor(guild.client, event.executorId);
+      author = await resolveUserAuthor(guild.client, event.executorId);
       inlineFields = [
         { name: 'Ticket', value: ticketRef, inline: true },
         { name: 'Priority', value: priorityLabel, inline: true },
@@ -210,7 +210,7 @@ async function createTicketLogEmbed(guild, event) {
       const comment = event.metadata?.comment;
       const ratingDisplay = formatRatingStars(rating) || 'No rating';
 
-      author = await resolveUsarAuthor(guild.client, event.userId);
+      author = await resolveUserAuthor(guild.client, event.userId);
       inlineFields = [
         { name: 'Ticket', value: ticketRef, inline: true },
         { name: 'Rating', value: ratingDisplay, inline: true },

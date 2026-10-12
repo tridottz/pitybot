@@ -1,7 +1,7 @@
 import todoAddHandler, {
   sharedTodoCompleteHandler,
   sharedTodoRemoveHandler,
-} from '../../../handlers/pendientesButtons.js';
+} from '../../../handlers/todoButtons.js';
 
 export default [
   todoAddHandler,

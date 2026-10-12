@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
-import { getEconomyData, setEconomyData } from '../../utils/economia.js';
+import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 const FISH_COOLDOWN = 45 * 60 * 1000; 
 const BASE_MIN_REWARD = 300;
@@ -31,11 +31,11 @@ const CATCH_MESSAGES = [
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('pescar')
+        .setName('fish')
         .setDescription('Ve a pescar para conseguir peces y ganar dinero'),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionAyudaer.safeDefer(interaction);
+        const deferred = await InteractionHelper.safeDefer(interaction);
         if (!deferred) return;
             
             const userId = interaction.user.id;
@@ -109,24 +109,24 @@ export default {
             };
 
             const embed = createEmbed({
-                title: 'Fishing Success!',
-                description: `${catchMessage}\n\nYou caught a **${fishCaught.emoji} ${fishCaught.name}**! You sold it for **$${finalEarned.toLocaleString()}**!${multiplierMessage}`,
+                title: '¡Pesca exitosa!',
+                description: `${catchMessage}\n\n¡Pescaste **${fishCaught.emoji} ${fishCaught.name}**! Lo vendiste por **$${finalEarned.toLocaleString()}**.${multiplierMessage}`,
                 color: rarityColors[fishCaught.rarity]
             })
                 .addFields(
                     {
-                        name: "New Cash Balance",
+                        name: "Nuevo saldo en efectivo",
                         value: `$${userData.wallet.toLocaleString()}`,
                         inline: true,
                     },
                     {
-                        name: "Rarity",
+                        name: "Rareza",
                         value: fishCaught.rarity.charAt(0).toUpperCase() + fishCaught.rarity.slice(1),
                         inline: true,
                     }
                 )
-                .setFooter({ text: `Next fishing trip available in 45 minutes.` });
+                .setFooter({ text: `Podrás volver a pescar en 45 minutos.` });
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
     }, { command: 'fish' })
 };

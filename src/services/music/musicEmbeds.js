@@ -22,7 +22,7 @@ export const MUSIC_BUTTON_IDS = {
 
 export function formatDuration(ms) {
     if (!ms || Number.isNaN(ms)) {
-        return 'Live';
+        return 'En vivo';
     }
     const totalSeconds = Math.floor(ms / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -41,37 +41,37 @@ function getTrackArtwork(track) {
 function getLoopLabel(loop) {
     switch (loop) {
         case 'track':
-            return 'Track';
+            return 'Canción';
         case 'queue':
-            return 'Queue';
+            return 'Cola';
         default:
-            return 'Off';
+            return 'Desactivado';
     }
 }
 
 export function buildNowPlayingEmbed(track, player, guildData) {
     const requester = track?.info?.requester;
     const requesterLabel = requester
-        ? (requester.username || requester.tag || 'Unknown')
-        : 'Unknown';
+        ? (requester.username || requester.tag || 'Desconocido')
+        : 'Desconocido';
 
     const position = formatDuration(player?.position || 0);
     const duration = formatDuration(track?.info?.length || 0);
 
     return createEmbed({
-        title: 'Now Playing',
-        description: track?.info?.title || 'Unknown track',
+        title: 'Reproduciendo ahora',
+        description: track?.info?.title || 'Canción desconocida',
         color: 'primary',
         fields: [
-            { name: 'Artist', value: track?.info?.author || 'Unknown', inline: true },
-            { name: 'Requester', value: requesterLabel, inline: true },
-            { name: 'Progress', value: `${position} / ${duration}`, inline: true },
-            { name: 'Volume', value: `${guildData?.volume ?? 75}%`, inline: true },
-            { name: 'Loop', value: getLoopLabel(guildData?.loop), inline: true },
-            { name: 'Queue', value: `${player?.queue?.length || 0} track(s)`, inline: true },
+            { name: 'Artista', value: track?.info?.author || 'Desconocido', inline: true },
+            { name: 'Solicitada por', value: requesterLabel, inline: true },
+            { name: 'Progreso', value: `${position} / ${duration}`, inline: true },
+            { name: 'Volumen', value: `${guildData?.volume ?? 75}%`, inline: true },
+            { name: 'Repetición', value: getLoopLabel(guildData?.loop), inline: true },
+            { name: 'Cola', value: `${player?.queue?.length || 0}`, inline: true },
         ],
         thumbnail: getTrackArtwork(track),
-        footer: player?.paused ? 'Paused' : 'Playing',
+        footer: player?.paused ? 'En pausa' : 'Reproduciendo',
     });
 }
 
@@ -84,25 +84,25 @@ export function buildQueueEmbed(queue, currentTrack, page = 0) {
 
     let description = '';
     if (currentTrack) {
-        description += `**Now Playing**\n${currentTrack.info?.title || 'Unknown'} — ${currentTrack.info?.author || 'Unknown'}\n\n`;
+        description += `**Reproduciendo ahora**\n${currentTrack.info?.title || 'Desconocida'} — ${currentTrack.info?.author || 'Desconocido'}\n\n`;
     }
 
     if (slice.length === 0) {
-        description += 'The queue is empty.';
+        description += 'La cola está vacía.';
     } else {
         description += slice
             .map((track, index) => {
                 const num = start + index + 1;
-                return `${num}. ${track.info?.title || 'Unknown'} — ${track.info?.author || 'Unknown'}`;
+                return `${num}. ${track.info?.title || 'Desconocida'} — ${track.info?.author || 'Desconocido'}`;
             })
             .join('\n');
     }
 
     return createEmbed({
-        title: 'Music Queue',
+        title: 'Cola de reproducción',
         description: description.substring(0, 4096),
         color: 'info',
-        footer: `Page ${safePage + 1} of ${totalPages} • ${totalTracks} queued`,
+        footer: `Página ${safePage + 1} de ${totalPages} • ${totalTracks} en cola`,
     });
 }
 
@@ -111,29 +111,29 @@ export function buildPlayerButtonRows(player, guildData) {
     const row1 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.PAUSE)
-            .setLabel('Pause')
+            .setLabel('Pausar')
             .setStyle(ButtonStyle.Primary)
             .setEmoji('⏸️')
             .setDisabled(Boolean(paused)),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.RESUME)
-            .setLabel('Resume')
+            .setLabel('Reanudar')
             .setStyle(ButtonStyle.Success)
             .setEmoji('▶️')
             .setDisabled(!paused),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.SKIP)
-            .setLabel('Skip')
+            .setLabel('Saltar')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('⏭️'),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.STOP)
-            .setLabel('Stop')
+            .setLabel('Detener')
             .setStyle(ButtonStyle.Danger)
             .setEmoji('⏹️'),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.SHUFFLE)
-            .setLabel('Shuffle')
+            .setLabel('Aleatorio')
             .setStyle(guildData?.shuffle ? ButtonStyle.Success : ButtonStyle.Secondary)
             .setEmoji('🔀'),
     );
@@ -141,7 +141,7 @@ export function buildPlayerButtonRows(player, guildData) {
     const row2 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.LOOP)
-            .setLabel('Loop')
+            .setLabel('Repetir')
             .setStyle(guildData?.loop !== 'none' ? ButtonStyle.Success : ButtonStyle.Secondary)
             .setEmoji('🔁'),
         new ButtonBuilder()
@@ -156,7 +156,7 @@ export function buildPlayerButtonRows(player, guildData) {
             .setEmoji('🔊'),
         new ButtonBuilder()
             .setCustomId(MUSIC_BUTTON_IDS.QUEUE)
-            .setLabel('Queue')
+            .setLabel('Cola')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('📋'),
     );

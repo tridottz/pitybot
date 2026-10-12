@@ -1,9 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, warningEmbed } from '../../utils/embeds.js';
-import { getEconomyData, setEconomyData } from '../../utils/economia.js';
+import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { botConfig } from '../../config/bot.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 const COOLDOWN = 30 * 60 * 1000;
 const MIN_WIN = Number(botConfig?.economy?.begMin) || 50;
@@ -12,11 +12,11 @@ const SUCCESS_CHANCE = 0.7;
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('mendigar')
+        .setName('beg')
         .setDescription('Pide una pequeña cantidad de dinero'),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionAyudaer.safeDefer(interaction);
+        const deferred = await InteractionHelper.safeDefer(interaction);
         if (!deferred) return;
             
             const userId = interaction.user.id;
@@ -28,7 +28,7 @@ export default {
                 throw createError(
                     "Failed to load economy data",
                     ErrorTypes.DATABASE,
-                    "Failed to load your economy data. Please try again later.",
+                    "No se pudieron cargar tus datos de economía. Inténtalo más tarde.",
                     { userId, guildId }
                 );
             }
@@ -94,6 +94,6 @@ userData.lastBeg = Date.now();
 
             await setEconomyData(client, guildId, userId, userData);
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [replyEmbed] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [replyEmbed] });
     }, { command: 'beg' })
 };

@@ -1,30 +1,30 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
 import { logger } from '../../utils/logger.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
-import dashboard from './modules/registros_dashboard.js';
-import channel from './modules/registros_channel.js';
+import dashboard from './modules/logging_dashboard.js';
+import channel from './modules/logging_channel.js';
 
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
     data: new SlashCommandBuilder()
-        .setName('registros')
-        .setDescription('Manage server logging — channels, filters, and event categories.')
+        .setName('logging')
+        .setDescription('Administra los registros del servidor: canales, filtros y categorías de eventos.')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .setDMPermission(false)
         .addSubcommand((subcommand) =>
             subcommand
                 .setName('dashboard')
-                .setDescription('Open the logging dashboard — set channels, filters, and toggle categories.'),
+                .setDescription('Abre el panel de registros para configurar canales, filtros y categorías de eventos.'),
         )
         .addSubcommand((subcommand) =>
             subcommand
                 .setName('channel')
-                .setDescription('Quick-set a log channel without opening the dashboard.')
+                .setDescription('Configura rápidamente un canal de registros sin abrir el panel.')
                 .addStringOption((option) =>
                     option
                         .setName('destination')
-                        .setDescription('Which log destination to configure.')
+                        .setDescription('Destino de registro que quieres configurar.')
                         .setRequired(true)
                         .addChoices(
                             { name: 'Audit (moderation, messages, members…)', value: 'audit' },
@@ -35,14 +35,14 @@ export default {
                 .addChannelOption((option) =>
                     option
                         .setName('channel')
-                        .setDescription('The text channel for logs.')
+                        .setDescription('Canal de texto para los registros.')
                         .addChannelTypes(ChannelType.GuildText)
                         .setRequired(false),
                 )
                 .addBooleanOption((option) =>
                     option
                         .setName('disable')
-                        .setDescription('Set to True to clear this log channel.')
+                        .setDescription('Actívalo para borrar este canal de registros.')
                         .setRequired(false),
                 ),
         ),
@@ -59,10 +59,10 @@ export default {
                 return await channel.execute(interaction, config, client);
             }
 
-            await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: 'This subcommand is not recognised.' });
+            await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'This subcommand is not recognised.' });
         } catch (error) {
             logger.error('logging command error:', error);
-            await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An unexpected error occurred.' }).catch(() => {});
+            await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An unexpected error occurred.' }).catch(() => {});
         }
     },
 };

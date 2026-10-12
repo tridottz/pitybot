@@ -1,90 +1,90 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } from 'discord.js';
 import { logger } from '../../utils/logger.js';
 import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
-import { checkUsarPermissions } from '../../utils/permissionGuard.js';
-import { removeLevels, getUsarLevelData, getLevelingConfig } from '../../services/niveling/niveling.js';
+import { checkUserPermissions } from '../../utils/permissionGuard.js';
+import { removeLevels, getUserLevelData, getLevelingConfig } from '../../services/leveling/leveling.js';
 import { createEmbed } from '../../utils/embeds.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
   data: new SlashCommandBuilder()
-    .setName('quitar-nivel')
-    .setDescription('Remove levels from a user')
-    .addUsarOption((option) =>
+    .setName('levelremove')
+    .setDescription('Quita niveles a un usuario')
+    .addUserOption((option) =>
       option
         .setName('user')
-        .setDescription('The user to remove levels from')
+        .setDescription('Usuario al que quieres quitar niveles')
         .setRequired(true)
     )
     .addIntegerOption((option) =>
       option
         .setName('levels')
-        .setDescription('Number of levels to remove')
+        .setDescription('Número de niveles que quieres quitar')
         .setRequired(true)
         .setMinValue(1)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setDMPermission(false),
-  category: 'Leveling',
+  category: 'Niveles',
 
   async execute(interaction, config, client) {
-    await InteractionAyudaer.safeDefer(interaction);
+    await InteractionHelper.safeDefer(interaction);
 
-    const hasPermission = await checkUsarPermissions(
+    const hasPermission = await checkUserPermissions(
       interaction,
       PermissionFlagsBits.ManageGuild,
-      'You need ManageGuild permission to use this command.'
+      'Necesitas el permiso **Administrar servidor** para usar este comando.'
     );
     if (!hasPermission) return;
 
     const levelingConfig = await getLevelingConfig(client, interaction.guildId);
     if (!levelingConfig?.enabled) {
-      await InteractionAyudaer.safeEditReply(interaction, {
+      await InteractionHelper.safeEditReply(interaction, {
         embeds: [
           new EmbedBuilder()
             .setColor('#f1c40f')
-            .setDescription('The leveling system is currently disabled on this server.')
+            .setDescription('El sistema de niveles está desactivado en este servidor.')
         ],
         flags: MessageFlags.Ephemeral
       });
       return;
     }
 
-    const targetUsar = interaction.options.getUsar('user');
+    const targetUser = interaction.options.getUser('user');
     const levelsToRemove = interaction.options.getInteger('levels');
 
-    const member = await interaction.guild.members.fetch(targetUsar.id).catch(() => null);
+    const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
     if (!member) {
       throw new TitanBotError(
-        `Usar ${targetUsar.id} not found in this guild`,
+        `User ${targetUser.id} not found in this guild`,
         ErrorTypes.USER_INPUT,
         'The specified user is not in this server.'
       );
     }
 
-    const userData = await getUsarLevelData(client, interaction.guildId, targetUsar.id);
+    const userData = await getUserLevelData(client, interaction.guildId, targetUser.id);
     if (userData.level === 0) {
       throw new TitanBotError(
-        `Usar ${targetUsar.id} is already at minimum level`,
+        `User ${targetUser.id} is already at minimum level`,
         ErrorTypes.VALIDATION,
-        `${targetUsar.tag} is already at level 0 and cannot have levels removed.`
+        `${targetUser.tag} ya está en nivel 0 y no se le pueden quitar más niveles.`
       );
     }
 
-    const updatedData = await removeLevels(client, interaction.guildId, targetUsar.id, levelsToRemove);
+    const updatedData = await removeLevels(client, interaction.guildId, targetUser.id, levelsToRemove);
 
-    await InteractionAyudaer.safeEditReply(interaction, {
+    await InteractionHelper.safeEditReply(interaction, {
       embeds: [
         createEmbed({
-          title: 'Levels Removed',
-          description: `Successfully removed ${levelsToRemove} levels from ${targetUsar.tag}.\n**New Level:** ${updatedData.level}`,
+          title: 'Niveles quitados',
+          description: `Se quitaron ${levelsToRemove} niveles a ${targetUser.tag}.\n**Nuevo nivel:** ${updatedData.level}`,
           color: 'success'
         })
       ]
     });
 
     logger.info(
-      `[ADMIN] Usar ${interaction.user.tag} removed ${levelsToRemove} levels from ${targetUsar.tag} in guild ${interaction.guildId}`
+      `[ADMIN] User ${interaction.user.tag} removed ${levelsToRemove} levels from ${targetUser.tag} in guild ${interaction.guildId}`
     );
   }
 };

@@ -1,7 +1,7 @@
 import { ComponentType, EmbedBuilder } from 'discord.js';
 import { getColor } from '../config/bot.js';
-import { TitanBotError, ErrorTypes, replyUsarError } from './errorHandler.js';
-import { InteractionAyudaer } from './interactionAyudaer.js';
+import { TitanBotError, ErrorTypes, replyUserError } from './errorHandler.js';
+import { InteractionHelper } from './interactionHelper.js';
 import { logger } from './logger.js';
 
 function matchesCustomId(customId, matcher) {
@@ -25,14 +25,14 @@ function wrapHandler(handler, interactionLabel = 'dashboard') {
 
             const errorMessage =
                 error instanceof TitanBotError
-                    ? error.userMessage || 'An error occurred while processing your selection.'
-                    : 'An unexpected error occurred while updating the configuration.';
+                    ? error.userMessage || 'Ocurrió un error al procesar tu selección.'
+                    : 'Ocurrió un error inesperado al actualizar la configuración.';
 
             if (!componentInteraction.replied && !componentInteraction.deferred) {
                 await componentInteraction.deferUpdate().catch(() => {});
             }
 
-            await replyUsarError(componentInteraction, {
+            await replyUserError(componentInteraction, {
                 type: ErrorTypes.CONFIGURATION,
                 message: errorMessage,
             }).catch(() => {});
@@ -55,7 +55,7 @@ export async function startDashboardSession({
     onButton,
     onTimeout,
 }) {
-    await InteractionAyudaer.safeEditReply(interaction, { embeds, components, flags });
+    await InteractionHelper.safeEditReply(interaction, { embeds, components, flags });
 
     const replyMessage = await interaction.fetchReply().catch(() => null);
     const replyMessageId = replyMessage?.id;
@@ -101,13 +101,13 @@ export async function startDashboardSession({
             }
 
             const timeoutEmbed = new EmbedBuilder()
-                .setTitle('Dashboard Timed Out')
+                .setTitle('El panel ha caducado')
                 .setDescription(
-                    'Este panel se cerró por inactividad. Vuelve a ejecutar el comando para continuar.',
+                    'Este panel se cerró por inactividad. Ejecuta el comando de nuevo para continuar.',
                 )
                 .setColor(getColor('error'));
 
-            await InteractionAyudaer.safeEditReply(interaction, {
+            await InteractionHelper.safeEditReply(interaction, {
                 embeds: [timeoutEmbed],
                 components: [],
                 flags,

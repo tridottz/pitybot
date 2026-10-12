@@ -4,8 +4,8 @@ import { mapArgumentsToOptions } from './prefixParser.js';
 import { createEmbed } from './embeds.js';
 import { handleInteractionError } from './errorHandler.js';
 import { logger } from './logger.js';
-import { InteractionAyudaer } from './interactionAyudaer.js';
-import { SLASH_ONLY_COMMANDS } from '../config/comandos/prefixRestrictions.js';
+import { InteractionHelper } from './interactionHelper.js';
+import { SLASH_ONLY_COMMANDS } from '../config/commands/prefixRestrictions.js';
 import { getCommandPrefix } from '../config/bot.js';
 import { ResponseCoordinator, buildPrefixUsage } from './responseCoordinator.js';
 import { enforceDefaultCommandPermissions } from './permissionGuard.js';
@@ -74,8 +74,8 @@ export function createMockInteraction(message, commandData, args) {
     options: {
       get: (name) => options.get(name),
       getString: (name) => options.getString(name),
-      getUsar: (name) => {
-        const userId = options.getUsar(name);
+      getUser: (name) => {
+        const userId = options.getUser(name);
         if (!userId || !message.guild) return null;
 
         const mentionMatch = userId.match(/<@!?(\d+)>/);
@@ -94,7 +94,7 @@ export function createMockInteraction(message, commandData, args) {
         };
       },
       getMember: (name) => {
-        const userId = options.getUsar(name);
+        const userId = options.getUser(name);
         if (!userId || !message.guild) return null;
 
         const mentionMatch = userId.match(/<@!?(\d+)>/);
@@ -166,7 +166,7 @@ export function createMockInteraction(message, commandData, args) {
   mockInteraction.followUp = (payload) => coordinator.followUp(payload);
   mockInteraction.deferReply = () => coordinator.deferLocal();
 
-  InteractionAyudaer.patchInteractionResponses(mockInteraction);
+  InteractionHelper.patchInteractionResponses(mockInteraction);
 
   return mockInteraction;
 }

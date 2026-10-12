@@ -47,14 +47,14 @@ function formatCategoryName(rawCategory) {
         .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function buildAyudaEntries(command, category) {
+function buildHelpEntries(command, category) {
     const commandData = normalizeCommandData(command);
     if (!commandData?.name) {
         return [];
     }
 
     const baseName = commandData.name;
-    const baseDescription = commandData.description || "No description";
+    const baseDescription = commandData.description || "Sin descripción";
     const options = commandData.options || [];
 
     const entries = [];
@@ -127,7 +127,7 @@ async function createCategoryCommandsMenu(category, client) {
     const categoryCommands = [];
 
     try {
-        const categoryPath = path.join(__dirname, "../../comandos", category);
+        const categoryPath = path.join(__dirname, "../../commands", category);
         const commandFiles = (await fs.readdir(categoryPath))
             .filter((file) => file.endsWith(".js"))
             .sort();
@@ -145,7 +145,7 @@ async function createCategoryCommandsMenu(category, client) {
                 )
                     continue;
 
-                categoryCommands.push(...buildAyudaEntries(command, categoryName));
+                categoryCommands.push(...buildHelpEntries(command, categoryName));
             }
         }
     } catch (error) {
@@ -170,10 +170,10 @@ async function createCategoryCommandsMenu(category, client) {
     }
 
     const embed = createEmbed({
-        title: `${icon} ${categoryName} Commands`,
+        title: `${icon} Comandos de ${categoryName}`,
         description: categoryCommands.length > 0
-            ? `Click any command mention below to use it.`
-            : `No commands found in the **${categoryName}** category.`
+            ? `Haz clic en la mención de un comando para usarlo.`
+            : `No se encontraron comandos en la categoría **${categoryName}**.`
     });
 
     if (categoryCommands.length > 0) {
@@ -190,7 +190,7 @@ async function createCategoryCommandsMenu(category, client) {
         const maxLength = 1000;
         if (commandMentions.length <= maxLength) {
             embed.addFields({
-                name: "Commands",
+                name: "Comandos",
                 value: commandMentions,
                 inline: false,
             });
@@ -211,7 +211,7 @@ async function createCategoryCommandsMenu(category, client) {
 
             chunks.forEach((chunk, index) => {
                 embed.addFields({
-                    name: `Commands (Part ${index + 1})`,
+                    name: `Comandos (parte ${index + 1})`,
                     value: chunk,
                     inline: false,
                 });
@@ -242,7 +242,7 @@ export async function createAllCommandsMenu(page = 1, client) {
     const commandsPerPage = 45;
     const allCommands = [];
 
-    const commandsPath = path.join(__dirname, "../../comandos");
+    const commandsPath = path.join(__dirname, "../../commands");
     const categoryDirs = (
         await fs.readdir(commandsPath, { withFileTypes: true })
     )
@@ -254,7 +254,7 @@ export async function createAllCommandsMenu(page = 1, client) {
         try {
             const categoryPath = path.join(
                 __dirname,
-                "../../comandos",
+                "../../commands",
                 category,
             );
             const commandFiles = (await fs.readdir(categoryPath))
@@ -276,7 +276,7 @@ export async function createAllCommandsMenu(page = 1, client) {
 
                     const categoryName = formatCategoryName(category);
 
-                    allCommands.push(...buildAyudaEntries(command, categoryName));
+                    allCommands.push(...buildHelpEntries(command, categoryName));
                 }
             }
         } catch (error) {
@@ -308,7 +308,7 @@ export async function createAllCommandsMenu(page = 1, client) {
 
     const embed = createEmbed({
         title: "📋 Todos los comandos",
-        description: `Browse every available command in one list. Usa the page buttons below to move through the full set.`
+        description: `Consulta todos los comandos disponibles en una lista. Usa los botones de abajo para cambiar de página.`
     });
 
     embed.setFooter({ text: FOOTER_TEXT });
@@ -334,7 +334,7 @@ export async function createAllCommandsMenu(page = 1, client) {
             if (!chunk) continue;
 
             embed.addFields({
-                name: i === 0 ? `Commands (Page ${page})` : "Commands (cont.)",
+                name: i === 0 ? `Comandos (página ${page})` : "Comandos (cont.)",
                 value: chunk,
                 inline: columnCount > 1,
             });
@@ -396,7 +396,7 @@ export const helpCategorySelectMenu = {
             }
         } catch (error) {
             if (error?.code === 40060 || error?.code === 10062) {
-                logger.warn('Ayuda category select interaction already acknowledged or expired.', {
+                logger.warn('Help category select interaction already acknowledged or expired.', {
                     event: 'interaction.help.select.unavailable',
                     errorCode: String(error.code),
                     customId: interaction.customId,

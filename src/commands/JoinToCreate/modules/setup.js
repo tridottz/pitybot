@@ -4,7 +4,7 @@ import { logger } from '../../../utils/logger.js';
 import { TitanBotError, ErrorTypes } from '../../../utils/errorHandler.js';
 import { addJoinToCreateTrigger, getJoinToCreateConfig } from '../../../utils/database.js';
 
-import { InteractionAyudaer } from '../../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../../utils/interactionHelper.js';
 export default {
     async execute(interaction, config, client) {
         const category = interaction.options.getChannel('category');
@@ -40,7 +40,7 @@ export default {
                 `Created trigger channel: ${triggerChannel}\n\n` +
                 `**Settings:**\n` +
                 `• Temporary Channel Name Template: \`${nameTemplate}\`\n` +
-                `• Usar Limit: ${userLimit === 0 ? 'No limit' : userLimit + ' users'}\n` +
+                `• User Limit: ${userLimit === 0 ? 'No limit' : userLimit + ' users'}\n` +
                 `• Bitrate: ${bitrate} kbps\n` +
                 `${category ?`• Category: ${category.name}`: '• Category: None (root level)'}\n\n` +
                 `When users join this channel, a temporary voice channel will be created for them.`
@@ -48,16 +48,16 @@ export default {
 
             try {
                 if (interaction.deferred) {
-                    await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+                    await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
                 } else {
-                    await InteractionAyudaer.safeReply(interaction, { embeds: [embed], flags: MessageFlags.Ephemeral });
+                    await InteractionHelper.safeReply(interaction, { embeds: [embed], flags: MessageFlags.Ephemeral });
                 }
             } catch (responseError) {
                 logger.error('Error responding to interaction:', responseError);
                 
                 try {
                     if (!interaction.replied) {
-                        await InteractionAyudaer.safeReply(interaction, { embeds: [embed], flags: MessageFlags.Ephemeral });
+                        await InteractionHelper.safeReply(interaction, { embeds: [embed], flags: MessageFlags.Ephemeral });
                     }
                 } catch (e) {
                     logger.error('All response attempts failed:', e);
@@ -71,7 +71,7 @@ export default {
             throw new TitanBotError(
                 `Setup failed: ${error.message}`,
                 ErrorTypes.DISCORD_API,
-                'Failed to set up Join to Create system.'
+                'No se pudo configurar el sistema «Unirse para crear».'
             );
         }
     }

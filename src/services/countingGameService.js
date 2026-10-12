@@ -5,7 +5,7 @@ const COUNTING_GAME_KEY_PREFIX = 'countingGame:';
 const COUNTING_SYSTEMS = {
   decimal: {
     label: 'Decimal',
-    description: 'Standard 10-number system using 0-9',
+    description: 'Sistema decimal de 10 números (0-9)',
     toString: (n) => n.toString(10),
     parse: (value) => {
       if (!/^[0-9]+$/.test(value)) return null;
@@ -14,7 +14,7 @@ const COUNTING_SYSTEMS = {
   },
   hexadecimal: {
     label: 'Hexadecimal',
-    description: '16-number system using 0-9 and A-F',
+    description: 'Sistema hexadecimal de 16 símbolos (0-9 y A-F)',
     toString: (n) => n.toString(16).toUpperCase(),
     parse: (value) => {
       if (!/^[0-9A-Fa-f]+$/.test(value)) return null;
@@ -23,7 +23,7 @@ const COUNTING_SYSTEMS = {
   },
   binary: {
     label: 'Binary',
-    description: '2-number system using 0-1',
+    description: 'Sistema binario de 2 símbolos (0-1)',
     toString: (n) => n.toString(2),
     parse: (value) => {
       if (!/^[01]+$/.test(value)) return null;
@@ -32,7 +32,7 @@ const COUNTING_SYSTEMS = {
   },
   base36: {
     label: 'Base36',
-    description: '36-number system using 0-9 and A-Z',
+    description: 'Sistema de 36 símbolos (0-9 y A-Z)',
     toString: (n) => n.toString(36).toUpperCase(),
     parse: (value) => {
       if (!/^[0-9A-Za-z]+$/.test(value)) return null;
@@ -41,7 +41,7 @@ const COUNTING_SYSTEMS = {
   },
   base64: {
     label: 'Base64',
-    description: '64-number system using A-Z, a-z, 0-9, +, /',
+    description: 'Sistema de 64 símbolos (A-Z, a-z, 0-9, +, /)',
     alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
     toString: (n) => {
       if (n === 0) return 'A';
@@ -72,7 +72,7 @@ const COUNTING_SYSTEMS = {
   },
   roman: {
     label: 'Roman',
-    description: 'Roman numerals like I, II, III, IV, V',
+    description: 'Números romanos como I, II, III, IV y V',
     toString: (n) => {
       const romanNumerals = [
         ['M', 1000], ['CM', 900], ['D', 500], ['CD', 400],
@@ -112,7 +112,7 @@ const COUNTING_SYSTEMS = {
   },
   math: {
     label: 'Math Expressions',
-    description: 'Usa a math expression that equals the next number, like 4*4=16',
+    description: 'Usa una expresión matemática cuyo resultado sea el siguiente número, como 4*4=16',
     toString: (n) => `${n}`,
     parse: (value) => {
       const expression = value.replace(/\s+/g, '');
@@ -174,7 +174,7 @@ const DEFAULT_COUNTING_GAME = {
   channelId: null,
   system: 'decimal',
   nextNumber: 1,
-  lastUsarId: null,
+  lastUserId: null,
   currentStreak: 0,
   bestStreak: 0,
   leaderboard: {},
@@ -224,7 +224,7 @@ export async function resetCountingGame(client, guildId, startNumber = 1) {
   return saveCountingGameConfig(client, guildId, {
     ...config,
     nextNumber: startNumber,
-    lastUsarId: null,
+    lastUserId: null,
     currentStreak: 0,
   });
 }
@@ -237,7 +237,7 @@ export async function recordCorrectCount(client, guildId, userId) {
   const updatedConfig = {
     ...config,
     leaderboard,
-    lastUsarId: userId,
+    lastUserId: userId,
     currentStreak: (config.currentStreak || 0) + 1,
     bestStreak: Math.max(config.bestStreak || 0, (config.currentStreak || 0) + 1),
     nextNumber: (config.nextNumber || 1) + 1,
@@ -285,7 +285,7 @@ export async function activateCountingGame(client, guildId, channelId, system = 
     channelId,
     system: normalizedSystem,
     nextNumber: 1,
-    lastUsarId: null,
+    lastUserId: null,
     currentStreak: 0,
     bestStreak: 0,
     leaderboard: {},

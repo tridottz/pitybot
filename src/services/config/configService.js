@@ -20,7 +20,7 @@ const CONFIG_VALIDATION_RULES = {
     adminRole: { type: 'role', required: false },
     prefix: { type: 'string', required: false, maxLength: 10, minLength: 1 },
     dmOnClose: { type: 'boolean', required: false },
-    maxTicketsPerUsar: { type: 'number', required: false, min: 1, max: 50 },
+    maxTicketsPerUser: { type: 'number', required: false, min: 1, max: 50 },
     birthdayChannelId: { type: 'channel', required: false },
     logIgnore: { type: 'object', required: false },
     logging: { type: 'object', required: false }
@@ -45,7 +45,7 @@ const ConfigValueSchemas = Object.freeze({
     adminRole: z.union([z.string().min(1), z.object({ id: z.string().min(1) })]),
     prefix: z.string().min(1).max(10),
     dmOnClose: z.boolean(),
-    maxTicketsPerUsar: z.number().int().min(1).max(50),
+    maxTicketsPerUser: z.number().int().min(1).max(50),
     birthdayChannelId: z.union([z.string().min(1), z.object({ id: z.string().min(1) })]),
     logIgnore: LogIgnoreSchema,
     logging: LoggingConfigSchema,
@@ -619,7 +619,7 @@ wrapServiceClassMethods(ConfigService, (methodName) => ({
     service: 'ConfigService',
     operation: methodName,
     message: `Configuration service operation failed: ${methodName}`,
-    userMessage: 'A configuration operation failed. Please try again in a moment.'
+    userMessage: 'Ocurrió un error al actualizar la configuración. Inténtalo de nuevo en un momento.'
 }));
 
 export default ConfigService;

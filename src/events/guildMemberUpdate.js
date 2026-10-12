@@ -1,5 +1,5 @@
 import { Events } from 'discord.js';
-import { logEvent, EVENT_TYPES } from '../services/registrosService.js';
+import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
 import { logger } from '../utils/logger.js';
 
 export default {
@@ -18,7 +18,7 @@ export default {
           data: {
             title: 'Nickname changed',
             lines: [
-              `**Usar:** ${newMember.user.toString()} (${newMember.user.tag})`,
+              `**User:** ${newMember.user.toString()} (${newMember.user.tag})`,
               `**ID:** \`${newMember.user.id}\``,
               `**Before:** ${oldMember.nickname || '*(no nickname)*'}`,
               `**After:** ${newMember.nickname || '*(no nickname)*'}`,

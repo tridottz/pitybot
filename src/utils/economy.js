@@ -23,13 +23,13 @@ rob: 4 * 60 * 60 * 1000,
 
 export function getEconomyKey(guildId, userId) {
     const validGuildId = validateDiscordId(guildId, 'guildId');
-    const validUsarId = validateDiscordId(userId, 'userId');
+    const validUserId = validateDiscordId(userId, 'userId');
     
-    if (!validGuildId || !validUsarId) {
+    if (!validGuildId || !validUserId) {
         throw new Error('Invalid guild ID or user ID');
     }
     
-    return getEconomyStorageKey(validGuildId, validUsarId);
+    return getEconomyStorageKey(validGuildId, validUserId);
 }
 
 export function getMaxBankCapacity(userData) {
@@ -121,9 +121,9 @@ export async function updateBalance(client, guildId, userId, options = {}) {
 
 export function checkCooldown(userData, action) {
     const cooldownTime = COOLDOWNS[action] || 0;
-    const lastUsad = userData[`last${action.charAt(0).toUpperCase() + action.slice(1)}`] || 0;
+    const lastUsed = userData[`last${action.charAt(0).toUpperCase() + action.slice(1)}`] || 0;
     const now = Date.now();
-    const remaining = Math.max(0, (lastUsad + cooldownTime) - now);
+    const remaining = Math.max(0, (lastUsed + cooldownTime) - now);
     
     return {
         onCooldown: remaining > 0,
@@ -175,32 +175,32 @@ export function getCrimeOutcome() {
         {
             success: true,
             amount: Math.floor(Math.random() * 200) + 50,
-            message: 'You successfully robbed a bank and got away with {amount}!' 
+            message: '¡Robaste un banco y escapaste con {amount}!' 
         },
         {
             success: true,
             amount: Math.floor(Math.random() * 100) + 20,
-            message: 'You pickpocketed someone and stole {amount}!' 
+            message: '¡Le robaste {amount} a alguien sin que se diera cuenta!' 
         },
         {
             success: true,
             amount: Math.floor(Math.random() * 150) + 30,
-            message: 'You hacked into a bank account and transferred {amount} to yourself!' 
+            message: '¡Hackeaste una cuenta bancaria y transferiste {amount} a la tuya!' 
         },
         {
             success: false,
             fine: Math.floor(Math.random() * 100) + 50,
-            message: 'You got caught and had to pay a fine of {fine}!' 
+            message: '¡Te atraparon y tuviste que pagar una multa de {fine}!' 
         },
         {
             success: false,
             fine: Math.floor(Math.random() * 150) + 50,
-            message: 'The police caught you! You paid {fine} to get out of jail.' 
+            message: '¡La policía te atrapó! Pagaste {fine} para salir de la cárcel.' 
         },
         {
             success: false,
             fine: 0,
-            message: 'Your attempt failed, but you managed to escape!' 
+            message: 'Tu intento falló, pero lograste escapar.' 
         }
     ];
     
@@ -227,7 +227,7 @@ Math.floor(Math.random() * (targetBalance * 0.3)) + 1,
         return {
             success: true,
             amount,
-            message: `You successfully robbed them and got away with {amount}!`
+            message: `¡Lo robaste y escapaste con {amount}!`
         };
     } else {
         const fine = Math.floor(Math.random() * 200) + 100;
@@ -236,7 +236,7 @@ Math.floor(Math.random() * (targetBalance * 0.3)) + 1,
             success: false,
             amount: 0,
             fine,
-            message: `You got caught! You had to pay a fine of {fine}.`
+            message: `¡Te atraparon! Tuviste que pagar una multa de {fine}.`
         };
     }
 }
@@ -249,18 +249,18 @@ export const addMoney = wrapServiceBoundary(async function addMoney(client, guil
     const validAmount = validateNumber(amount, 'amount');
     if (validAmount === null || validAmount <= 0) {
         throw createError(
-            'Invalid amount',
+            'Cantidad no válida',
             ErrorTypes.VALIDATION,
-            'Amount must be a positive number.',
+            'La cantidad debe ser un número positivo.',
             { guildId, userId, amount, operation: 'addMoney' }
         );
     }
 
     if (type !== 'wallet' && type !== 'bank') {
         throw createError(
-            'Invalid money type',
+            'Tipo de dinero no válido',
             ErrorTypes.VALIDATION,
-            'Type must be "wallet" or "bank".',
+            'El tipo debe ser "wallet" (cartera) o "bank" (banco).',
             { guildId, userId, type, operation: 'addMoney' }
         );
     }
@@ -273,7 +273,7 @@ export const addMoney = wrapServiceBoundary(async function addMoney(client, guil
             throw createError(
                 'Bank capacity exceeded',
                 ErrorTypes.VALIDATION,
-                `Bank capacity exceeded. Current: ${userData.bank || 0}, Max: ${maxBank}.`,
+                `Se superó la capacidad del banco. Saldo actual: ${userData.bank || 0}; máximo: ${maxBank}.`,
                 { guildId, userId, current: userData.bank || 0, max: maxBank, operation: 'addMoney' }
             );
         }
@@ -291,25 +291,25 @@ export const addMoney = wrapServiceBoundary(async function addMoney(client, guil
 }, {
     service: 'economy',
     operation: 'addMoney',
-    userMessage: 'Failed to add money. Please try again.',
+    userMessage: 'No se pudo añadir el dinero. Inténtalo de nuevo.',
 });
 
 export const removeMoney = wrapServiceBoundary(async function removeMoney(client, guildId, userId, amount, type = 'wallet') {
     const validAmount = validateNumber(amount, 'amount');
     if (validAmount === null || validAmount <= 0) {
         throw createError(
-            'Invalid amount',
+            'Cantidad no válida',
             ErrorTypes.VALIDATION,
-            'Amount must be a positive number.',
+            'La cantidad debe ser un número positivo.',
             { guildId, userId, amount, operation: 'removeMoney' }
         );
     }
 
     if (type !== 'wallet' && type !== 'bank') {
         throw createError(
-            'Invalid money type',
+            'Tipo de dinero no válido',
             ErrorTypes.VALIDATION,
-            'Type must be "wallet" or "bank".',
+            'El tipo debe ser "wallet" (cartera) o "bank" (banco).',
             { guildId, userId, type, operation: 'removeMoney' }
         );
     }
@@ -321,7 +321,7 @@ export const removeMoney = wrapServiceBoundary(async function removeMoney(client
             throw createError(
                 'Insufficient bank funds',
                 ErrorTypes.VALIDATION,
-                `Insufficient funds in bank. You have ${userData.bank || 0}, need ${validAmount}.`,
+                `No hay fondos suficientes en el banco. Tienes ${userData.bank || 0} y necesitas ${validAmount}.`,
                 { guildId, userId, current: userData.bank || 0, required: validAmount, operation: 'removeMoney' }
             );
         }
@@ -346,7 +346,7 @@ export const removeMoney = wrapServiceBoundary(async function removeMoney(client
 }, {
     service: 'economy',
     operation: 'removeMoney',
-    userMessage: 'Failed to remove money. Please try again.',
+    userMessage: 'No se pudo quitar el dinero. Inténtalo de nuevo.',
 });
 
 export function getShopInventory() {
@@ -372,7 +372,7 @@ export function getShopInventory() {
             name: 'Laptop',
             emoji: '💻',
             price: 2000,
-            description: 'Work as a programmer for higher pay!',
+            description: '¡Trabaja como programador para ganar más!',
             type: 'tool',
             workMultiplier: 1.5
         },
@@ -381,14 +381,14 @@ export function getShopInventory() {
             name: 'Bank Loan',
             emoji: '🏦',
             price: 5000,
-            description: 'Increases your bank capacity by 50,000!',
+            description: '¡Aumenta la capacidad de tu banco en 50 000!',
             type: 'upgrade',
             effect: 'bank_capacity',
             value: 50000
         },
         {
             id: 'lottery_ticket',
-            name: 'Lottery Ticket',
+            name: 'Boleto de lotería',
             emoji: '🎫',
             price: 100,
             description: 'A chance to win big!',

@@ -2,7 +2,7 @@ import { successEmbed } from '../utils/embeds.js';
 import { logger } from '../utils/logger.js';
 import { evaluateMathExpression } from '../utils/safeMathParser.js';
 
-import { replyUsarError, ErrorTypes } from '../utils/errorHandler.js';
+import { replyUserError, ErrorTypes } from '../utils/errorHandler.js';
 function evaluate(expression) {
     return evaluateMathExpression(expression);
 }
@@ -14,14 +14,14 @@ async function calculateModalHandler(interaction, client, args) {
         const contextKey = operandInput?.customId?.split(':')[1];
         
         if (!contextKey) {
-            return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Failed to retrieve calculation context.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'No se pudo recuperar el contexto del cálculo.' });
         }
 
-        const { calculationContexts } = await import('../comandos/Tools/calcular.js');
+        const { calculationContexts } = await import('../commands/Tools/calculate.js');
         const context = calculationContexts.get(contextKey);
         
         if (!context) {
-            return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'This calculation has expired. Please start a new calculation.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Este cálculo caducó. Inicia uno nuevo.' });
         }
 
         await interaction.deferReply({ ephemeral: false });
@@ -29,7 +29,7 @@ async function calculateModalHandler(interaction, client, args) {
         const operand = interaction.fields.getTextInputValue(operandInput.customId);
         
         if (!operand || isNaN(operand)) {
-            return await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please provide a valid number.' });
+            return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Proporciona un número válido.' });
         }
 
         const { expression, formattedResult, operator } = context;
@@ -59,7 +59,7 @@ async function calculateModalHandler(interaction, client, args) {
                 "🧮 Calculation Result",
                 `**Expression:** \`${newExpression.replace(/`/g, "\`")}\`\n` +
                     `**Result:** \`${formattedNewResult}\`\n\n` +
-                    `*Usa the buttons in the channel message to perform more operations.*`,
+                    `*Use the buttons in the channel message to perform more operations.*`,
             );
 
             try {
@@ -77,20 +77,20 @@ async function calculateModalHandler(interaction, client, args) {
             calculationContexts.delete(contextKey);
 
             await interaction.editReply({
-                embeds: [successEmbed('✅ Calculated', `\`${newExpression}\` = \`${formattedNewResult}\``)],
+                embeds: [successEmbed('✅ Cálculo realizado', `\`${newExpression}\` = \`${formattedNewResult}\``)],
             });
 
         } catch (calcError) {
             logger.error('Calculate evaluation error:', calcError);
-            await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Failed to evaluate the expression.' });
+            await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'No se pudo evaluar la expresión.' });
         }
     } catch (error) {
         logger.error('Calculate modal handler error:', error);
         try {
             if (!interaction.replied && !interaction.deferred) {
-                await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred processing your calculation.' });
+                await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al procesar tu cálculo.' });
             } else {
-                await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred processing your calculation.' });
+                await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al procesar tu cálculo.' });
             }
         } catch (err) {
             logger.error('Failed to send error message:', err);

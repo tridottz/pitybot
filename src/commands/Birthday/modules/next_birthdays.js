@@ -1,12 +1,12 @@
 import { EmbedBuilder } from 'discord.js';
-import { getUpcomingBirthdays } from '../../../services/cumpleanosService.js';
+import { getUpcomingBirthdays } from '../../../services/birthdayService.js';
 import { deleteBirthday } from '../../../utils/database.js';
 import { logger } from '../../../utils/logger.js';
 
-import { InteractionAyudaer } from '../../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../../utils/interactionHelper.js';
 export default {
     async execute(interaction, config, client) {
-        await InteractionAyudaer.safeDefer(interaction);
+        await InteractionHelper.safeDefer(interaction);
 
         const next5 = await getUpcomingBirthdays(client, interaction.guildId, 5);
 
@@ -15,7 +15,7 @@ export default {
                 .setColor(0xFF0000)
                 .setTitle('No se encontraron cumpleaños')
                 .setDescription('Aún no se ha establecido ningún cumpleaños en este servidor. ¡Usa `/cumpleaños establecer` para agregar cumpleaños!');
-            return await InteractionAyudaer.safeEditReply(interaction, {
+            return await InteractionHelper.safeEditReply(interaction, {
                 embeds: [embed]
             });
         }
@@ -35,7 +35,7 @@ export default {
                 .setColor(0xFF0000)
                 .setTitle('Sin próximos cumpleaños')
                 .setDescription('No se encontraron próximos cumpleaños de los miembros actuales del servidor.');
-            return await InteractionAyudaer.safeEditReply(interaction, {
+            return await InteractionHelper.safeEditReply(interaction, {
                 embeds: [embed]
             });
         }
@@ -68,7 +68,7 @@ export default {
             .setTitle('Próximos 5 cumpleaños')
             .setDescription(birthdayList);
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [embed]
         });
 

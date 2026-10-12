@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
-import { getEconomyData, setEconomyData } from '../../utils/economia.js';
+import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 const MINE_COOLDOWN = 60 * 60 * 1000;
 const BASE_MIN_REWARD = 400;
@@ -20,11 +20,11 @@ const MINE_LOCATIONS = [
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('minar')
+        .setName('mine')
         .setDescription('Ve a minar para ganar dinero'),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionAyudaer.safeDefer(interaction);
+        const deferred = await InteractionHelper.safeDefer(interaction);
         if (!deferred) return;
             
             const userId = interaction.user.id;
@@ -46,7 +46,7 @@ export default {
                 throw createError(
                     "Mining cooldown active",
                     ErrorTypes.RATE_LIMIT,
-                    `Your pickaxe is cooling down. Wait for **${hours}h ${minutes}m** before mining again.`,
+                    `Tu pico está en espera. Aguarda **${hours} h ${minutes} min** antes de volver a minar.`,
                     { remaining, cooldownType: 'mine' }
                 );
             }
@@ -82,12 +82,12 @@ userData.lastMine = now;
                 `You explored a **${location}** and managed to find minerals worth **$${finalEarned.toLocaleString()}**!${multiplierMessage}`,
             )
                 .addFields({
-                    name: "New Cash Balance",
+                    name: "Nuevo saldo en efectivo",
                     value: `$${userData.wallet.toLocaleString()}`,
                     inline: true,
                 })
-                .setFooter({ text: `Next mine available in 1 hour.` });
+                .setFooter({ text: `Podrás volver a minar en 1 hora.` });
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
     }, { command: 'mine' })
 };

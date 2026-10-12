@@ -1,19 +1,19 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
-import { getEconomyData, addMoney, removeMoney, setEconomyData } from '../../utils/economia.js';
+import { getEconomyData, addMoney, removeMoney, setEconomyData } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
 import { logger } from '../../utils/logger.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import EconomyService from '../../services/economiaService.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import EconomyService from '../../services/economyService.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('pagar')
-        .setDescription('Págale a otro usuario con tu dinero')
-        .addUsarOption(option =>
+        .setName('pay')
+        .setDescription('Envía parte de tu dinero a otro usuario')
+        .addUserOption(option =>
             option
                 .setName('user')
-                .setDescription('Usar to pay')
+                .setDescription('Usuario al que quieres pagar')
                 .setRequired(true)
         )
         .addIntegerOption(option =>
@@ -25,11 +25,11 @@ export default {
         ),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionAyudaer.safeDefer(interaction);
+        const deferred = await InteractionHelper.safeDefer(interaction);
         if (!deferred) return;
             
             const senderId = interaction.user.id;
-            const receiver = interaction.options.getUsar("user");
+            const receiver = interaction.options.getUser("user");
             const amount = interaction.options.getInteger("amount");
             const guildId = interaction.guildId;
 
@@ -44,7 +44,7 @@ export default {
                 throw createError(
                     "Cannot pay bot",
                     ErrorTypes.VALIDATION,
-                    "You cannot pay a bot.",
+                    "No puedes pagarle a un bot.",
                     { receiverId: receiver.id, isBot: true }
                 );
             }
@@ -53,7 +53,7 @@ export default {
                 throw createError(
                     "Cannot pay self",
                     ErrorTypes.VALIDATION,
-                    "You cannot pay yourself.",
+                    "No puedes pagarte a ti mismo.",
                     { senderId, receiverId: receiver.id }
                 );
             }
@@ -62,7 +62,7 @@ export default {
                 throw createError(
                     "Invalid payment amount",
                     ErrorTypes.VALIDATION,
-                    "Amount must be greater than zero.",
+                    "La cantidad debe ser mayor que cero.",
                     { amount, senderId }
                 );
             }
@@ -76,7 +76,7 @@ export default {
                 throw createError(
                     "Failed to load sender economy data",
                     ErrorTypes.DATABASE,
-                    "Failed to load your economy data. Please try again later.",
+                    "No se pudieron cargar tus datos de economía. Inténtalo más tarde.",
                     { userId: senderId, guildId }
                 );
             }
@@ -85,7 +85,7 @@ export default {
                 throw createError(
                     "Failed to load receiver economy data",
                     ErrorTypes.DATABASE,
-                    "Failed to load the receiver's economy data. Please try again later.",
+                    "No se pudieron cargar los datos económicos del destinatario. Inténtalo más tarde.",
                     { userId: receiver.id, guildId }
                 );
             }
@@ -102,27 +102,27 @@ export default {
             const updatedReceiverData = await getEconomyData(client, guildId, receiver.id);
 
             const embed = successEmbed(
-                'Payment Successful',
-                `You successfully paid **${receiver.username}** the amount of **$${amount.toLocaleString()}**!`
+                'Pago realizado',
+                `Le pagaste **$${amount.toLocaleString()}** a **${receiver.username}**.`
             )
                 .addFields(
                     {
-                        name: "Payment Amount",
+                        name: "Cantidad enviada",
                         value: `$${amount.toLocaleString()}`,
                         inline: true,
                     },
                     {
-                        name: "Your New Balance",
+                        name: "Tu nuevo saldo",
                         value: `$${updatedSenderData.wallet.toLocaleString()}`,
                         inline: true,
                     },
                 )
                 .setFooter({
-                    text: `Paid to ${receiver.tag}`,
+                    text: `Enviado a ${receiver.tag}`,
                     iconURL: receiver.displayAvatarURL(),
                 });
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
 
             logger.info(`[ECONOMY] Payment sent successfully`, {
                 senderId,
@@ -134,10 +134,10 @@ export default {
 
             try {
                 const receiverEmbed = createEmbed({ 
-                    title: "Incoming Payment!", 
-                    description: `${interaction.user.username} paid you **$${amount.toLocaleString()}**.` 
+                    title: "¡Pago recibido!", 
+                    description: `${interaction.user.username} te envió **$${amount.toLocaleString()}**.` 
                 }).addFields({
-                    name: "Your New Cash",
+                    name: "Tu nuevo saldo en efectivo",
                     value: `$${updatedReceiverData.wallet.toLocaleString()}`,
                     inline: true,
                 });

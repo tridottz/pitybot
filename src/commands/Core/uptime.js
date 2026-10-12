@@ -2,15 +2,15 @@ import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
-    .setName("tiempo-activo")
+    .setName("uptime")
     .setDescription("Consulta cuánto tiempo lleva conectado el bot"),
 
   async execute(interaction) {
     try {
-      await InteractionAyudaer.safeDefer(interaction);
+      await InteractionHelper.safeDefer(interaction);
       
       let totalSeconds = interaction.client.uptime / 1000;
       let days = Math.floor(totalSeconds / 86400);
@@ -22,9 +22,9 @@ export default {
 
       const uptimeStr = `${days}d ${hours}h ${minutes}m ${seconds}s`;
 
-      await InteractionAyudaer.safeEditReply(interaction, {
+      await InteractionHelper.safeEditReply(interaction, {
         embeds: [createEmbed({ 
-          title: "System Uptime", 
+          title: "Tiempo activo del sistema", 
           description: `\`\`\`${uptimeStr}\`\`\`` 
         })],
       });
@@ -32,8 +32,8 @@ export default {
       logger.error('Uptime command error:', error);
       
       try {
-        return await InteractionAyudaer.safeEditReply(interaction, {
-          embeds: [createEmbed({ title: 'System Error', description: 'Could not compute uptime.', color: 'error' })],
+        return await InteractionHelper.safeEditReply(interaction, {
+          embeds: [createEmbed({ title: 'Error del sistema', description: 'No se pudo calcular el tiempo activo.', color: 'error' })],
           flags: MessageFlags.Ephemeral,
         });
       } catch (replyError) {

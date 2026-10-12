@@ -1,81 +1,81 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } from 'discord.js';
 import { logger } from '../../utils/logger.js';
 import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
-import { checkUsarPermissions } from '../../utils/permissionGuard.js';
-import { addLevels, getLevelingConfig } from '../../services/niveling/niveling.js';
+import { checkUserPermissions } from '../../utils/permissionGuard.js';
+import { addLevels, getLevelingConfig } from '../../services/leveling/leveling.js';
 import { createEmbed } from '../../utils/embeds.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
   data: new SlashCommandBuilder()
-    .setName('sumar-nivel')
-    .setDescription('Add levels to a user')
-    .addUsarOption((option) =>
+    .setName('leveladd')
+    .setDescription('Añade niveles a un usuario')
+    .addUserOption((option) =>
       option
         .setName('user')
-        .setDescription('The user to add levels to')
+        .setDescription('Usuario al que quieres añadir niveles')
         .setRequired(true)
     )
     .addIntegerOption((option) =>
       option
         .setName('levels')
-        .setDescription('Number of levels to add')
+        .setDescription('Número de niveles que quieres añadir')
         .setRequired(true)
         .setMinValue(1)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setDMPermission(false),
-  category: 'Leveling',
+  category: 'Niveles',
 
   async execute(interaction, config, client) {
-    await InteractionAyudaer.safeDefer(interaction);
+    await InteractionHelper.safeDefer(interaction);
 
-    const hasPermission = await checkUsarPermissions(
+    const hasPermission = await checkUserPermissions(
       interaction,
       PermissionFlagsBits.ManageGuild,
-      'You need ManageGuild permission to use this command.'
+      'Necesitas el permiso **Administrar servidor** para usar este comando.'
     );
     if (!hasPermission) return;
 
     const levelingConfig = await getLevelingConfig(client, interaction.guildId);
     if (!levelingConfig?.enabled) {
-      await InteractionAyudaer.safeEditReply(interaction, {
+      await InteractionHelper.safeEditReply(interaction, {
         embeds: [
           new EmbedBuilder()
             .setColor('#f1c40f')
-            .setDescription('The leveling system is currently disabled on this server.')
+            .setDescription('El sistema de niveles está desactivado en este servidor.')
         ],
         flags: MessageFlags.Ephemeral
       });
       return;
     }
 
-    const targetUsar = interaction.options.getUsar('user');
+    const targetUser = interaction.options.getUser('user');
     const levelsToAdd = interaction.options.getInteger('levels');
 
-    const member = await interaction.guild.members.fetch(targetUsar.id).catch(() => null);
+    const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
     if (!member) {
       throw new TitanBotError(
-        `Usar ${targetUsar.id} not found in this guild`,
+        `User ${targetUser.id} not found in this guild`,
         ErrorTypes.USER_INPUT,
         'The specified user is not in this server.'
       );
     }
 
-    const userData = await addLevels(client, interaction.guildId, targetUsar.id, levelsToAdd);
+    const userData = await addLevels(client, interaction.guildId, targetUser.id, levelsToAdd);
 
-    await InteractionAyudaer.safeEditReply(interaction, {
+    await InteractionHelper.safeEditReply(interaction, {
       embeds: [
         createEmbed({
-          title: 'Levels Added',
-          description: `Successfully added ${levelsToAdd} levels to ${targetUsar.tag}.\n**New Level:** ${userData.level}`,
+          title: 'Niveles añadidos',
+          description: `Se añadieron ${levelsToAdd} niveles a ${targetUser.tag}.\n**Nuevo nivel:** ${userData.level}`,
           color: 'success'
         })
       ]
     });
 
     logger.info(
-      `[ADMIN] Usar ${interaction.user.tag} added ${levelsToAdd} levels to ${targetUsar.tag} in guild ${interaction.guildId}`
+      `[ADMIN] User ${interaction.user.tag} added ${levelsToAdd} levels to ${targetUser.tag} in guild ${interaction.guildId}`
     );
   }
 };

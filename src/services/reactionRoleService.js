@@ -117,7 +117,7 @@ export async function getReactionRoleMessage(client, guildId, messageId) {
         throw createError(
             `Database error retrieving reaction role message`,
             ErrorTypes.DATABASE,
-            'Failed to retrieve reaction role data. Please try again.',
+            'No se pudieron obtener los datos de roles. Inténtalo de nuevo.',
             { guildId, messageId, originalError: error.message }
         );
     }
@@ -141,7 +141,7 @@ export async function createReactionRoleMessage(client, guildId, channelId, mess
             throw createError(
                 'No roles provided',
                 ErrorTypes.VALIDATION,
-                'You must provide at least one role.',
+                'Debes indicar al menos un rol.',
                 { roleIds }
             );
         }
@@ -150,7 +150,7 @@ export async function createReactionRoleMessage(client, guildId, channelId, mess
             throw createError(
                 `Too many roles: ${roleIds.length}`,
                 ErrorTypes.VALIDATION,
-                `You can only add up to ${MAX_ROLES_PER_MESSAGE} roles per reaction role message.`,
+                `Solo puedes añadir hasta ${MAX_ROLES_PER_MESSAGE} roles por mensaje.`,
                 { roleIds, limit: MAX_ROLES_PER_MESSAGE }
             );
         }
@@ -181,7 +181,7 @@ export async function createReactionRoleMessage(client, guildId, channelId, mess
         throw createError(
             `Database error creating reaction role message`,
             ErrorTypes.DATABASE,
-            'Failed to save reaction role data. Please try again.',
+            'No se pudieron guardar los datos de roles. Inténtalo de nuevo.',
             { guildId, messageId, originalError: error.message }
         );
     }
@@ -215,7 +215,7 @@ export async function addReactionRole(client, guildId, messageId, emoji, roleId)
         throw createError(
             `Database error adding reaction role`,
             ErrorTypes.DATABASE,
-            'Failed to add reaction role. Please try again.',
+            'No se pudo añadir el rol. Inténtalo de nuevo.',
             { guildId, messageId, originalError: error.message }
         );
     }
@@ -246,7 +246,7 @@ export async function deleteReactionRoleMessage(client, guildId, messageId) {
         throw createError(
             `Database error deleting reaction role message`,
             ErrorTypes.DATABASE,
-            'Failed to delete reaction role message. Please try again.',
+            'No se pudo eliminar el mensaje de roles. Inténtalo de nuevo.',
             { guildId, messageId, originalError: error.message }
         );
     }
@@ -283,7 +283,7 @@ export async function removeReactionRole(client, guildId, messageId, emoji) {
         throw createError(
             `Database error removing reaction role`,
             ErrorTypes.DATABASE,
-            'Failed to remove reaction role. Please try again.',
+            'No se pudo quitar el rol. Inténtalo de nuevo.',
             { guildId, messageId, originalError: error.message }
         );
     }
@@ -323,7 +323,7 @@ export async function getAllReactionRoleMessages(client, guildId) {
             throw createError(
                 'Database error listing reaction roles',
                 ErrorTypes.DATABASE,
-                'Failed to retrieve reaction role list. Please try again.',
+                'No se pudo obtener la lista de roles. Inténtalo de nuevo.',
                 { guildId, originalError: listError.message }
             );
         }
@@ -369,7 +369,7 @@ export async function getAllReactionRoleMessages(client, guildId) {
         throw createError(
             'Database error retrieving reaction roles',
             ErrorTypes.DATABASE,
-            'Failed to retrieve reaction role messages. Please try again.',
+            'No se pudieron obtener los mensajes de roles. Inténtalo de nuevo.',
             { guildId, originalError: error.message }
         );
     }
@@ -409,7 +409,7 @@ export async function setReactionRoleChannel(client, guildId, messageId, channel
         throw createError(
             `Database error setting reaction role channel`,
             ErrorTypes.DATABASE,
-            'Failed to update reaction role channel. Please try again.',
+            'No se pudo actualizar el canal de roles. Inténtalo de nuevo.',
             { guildId, messageId, channelId, originalError: error.message }
         );
     }

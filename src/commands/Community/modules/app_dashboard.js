@@ -18,10 +18,10 @@ import {
     CheckboxBuilder,
     TextDisplayBuilder,
 } from 'discord.js';
-import { InteractionAyudaer } from '../../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../../utils/interactionHelper.js';
 import { successEmbed } from '../../../utils/embeds.js';
 import { logger } from '../../../utils/logger.js';
-import { TitanBotError, ErrorTypes, replyUsarError } from '../../../utils/errorHandler.js';
+import { TitanBotError, ErrorTypes, replyUserError } from '../../../utils/errorHandler.js';
 import { safeDeferInteraction } from '../../../utils/interactionValidator.js';
 import {
     getApplicationSettings,
@@ -35,7 +35,7 @@ import {
     deleteApplication,
 } from '../../../utils/database.js';
 import { getGuildConfig } from '../../../services/config/guildConfig.js';
-import { setLogChannel, resolveApplicationLogChannel, resolveLogChannel } from '../../../services/registrosService.js';
+import { setLogChannel, resolveApplicationLogChannel, resolveLogChannel } from '../../../services/loggingService.js';
 
 async function buildDashboardEmbed(settings, roles, guild, client) {
     const guildConfig = await getGuildConfig(client, guild.id);
@@ -127,7 +127,7 @@ function buildButtonRow(settings, guildId, disabled = false) {
 
 async function refreshDashboard(rootInteraction, settings, roles, guildId, client) {
     const selectMenu = buildSelectMenu(guildId);
-    await InteractionAyudaer.safeEditReply(rootInteraction, {
+    await InteractionHelper.safeEditReply(rootInteraction, {
         embeds: [await buildDashboardEmbed(settings, roles, rootInteraction.guild, client)],
         components: [
             buildButtonRow(settings, guildId),
@@ -142,7 +142,7 @@ export default {
         try {
             const guildId = interaction.guild.id;
 
-            await InteractionAyudaer.safeDefer(interaction, { flags: ['Ephemeral'] });
+            await InteractionHelper.safeDefer(interaction, { flags: ['Ephemeral'] });
 
             const [settings, roles] = await Promise.all([
                 getApplicationSettings(client, guildId),
@@ -162,7 +162,7 @@ export default {
                 throw new TitanBotError(
                     'Applications system not set up',
                     ErrorTypes.CONFIGURATION,
-                    'El sistema de postulaciones aún no está configurado. Usa `/admin-app establecer` para crear tu primera postulación.',
+                    'El sistema de postulaciones aún no está configurado. Usa `/app-admin establecer` para crear tu primera postulación.',
                 );
             }
 
@@ -214,7 +214,7 @@ async function showApplicationSelector(interaction, roles, settings, guildId, cl
         .setDescription('Elige qué rol de postulación quieres configurar.')
         .setColor(getColor('info'));
 
-    await InteractionAyudaer.safeEditReply(interaction, {
+    await InteractionHelper.safeEditReply(interaction, {
         embeds: [embed],
         components: [new ActionRowBuilder().addComponents(selectMenu)],
     });
@@ -241,7 +241,7 @@ async function showApplicationSelector(interaction, roles, settings, guildId, cl
 
     collector.on('end', (collected, reason) => {
         if (reason === 'time' && collected.size === 0) {
-            replyUsarError(interaction, {
+            replyUserError(interaction, {
                 type: ErrorTypes.RATE_LIMIT,
                 message: 'No se hizo ninguna selección. El panel se cerró.',
             }).catch(() => {});
@@ -252,7 +252,7 @@ async function showApplicationSelector(interaction, roles, settings, guildId, cl
 async function showGlobalDashboard(interaction, settings, roles, guildId, client) {
     const selectMenu = buildSelectMenu(guildId);
 
-    await InteractionAyudaer.safeEditReply(interaction, {
+    await InteractionHelper.safeEditReply(interaction, {
         embeds: [await buildDashboardEmbed(settings, roles, interaction.guild, client)],
         components: [
             buildButtonRow(settings, guildId),
@@ -340,7 +340,7 @@ async function showApplicationDashboard(rootInteraction, selectedRole, settings,
 
     const menuRow = new ActionRowBuilder().addComponents(configMenu);
 
-    await InteractionAyudaer.safeEditReply(rootInteraction, {
+    await InteractionHelper.safeEditReply(rootInteraction, {
         embeds: [embed],
         components: [menuRow, controlButtons],
     });
@@ -404,7 +404,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
                 await safeDeferInteraction(selectInteraction);
             }
 
-            await replyUsarError(selectInteraction, {
+            await replyUserError(selectInteraction, {
                 type: ErrorTypes.CONFIGURATION,
                 message: errorMessage,
             }).catch(() => {});
@@ -418,7 +418,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
                 .setDescription('Este panel se cerró por inactividad. Vuelve a usar el comando para continuar.')
                 .setColor(getColor('error'));
                 
-            await InteractionAyudaer.safeEditReply(interaction, {
+            await InteractionHelper.safeEditReply(interaction, {
                 embeds: [timeoutEmbed],
                 components: [],
             }).catch(() => {});
@@ -462,7 +462,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
 
             } catch (error) {
                 logger.error('Error toggling global application status:', error);
-                await replyUsarError(toggleInteraction, {
+                await replyUserError(toggleInteraction, {
                     type: ErrorTypes.UNKNOWN,
                     message: 'Ocurrió un error al cambiar el estado de las postulaciones.',
                 });
@@ -476,7 +476,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
                     .setDescription('Esta sesión del panel expiró por inactividad (10 minutos).\n\nPara seguir configurando tus postulaciones, vuelve a usar el comando.')
                     .setColor(getColor('warning'));
                     
-                await InteractionAyudaer.safeEditReply(interaction, {
+                await InteractionHelper.safeEditReply(interaction, {
                     embeds: [timeoutEmbed],
                     components: [],
                 }).catch(() => {});
@@ -521,7 +521,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
                 await btnInteraction.showModal(confirmModal);
             } catch (error) {
                 logger.error('Error showing delete confirmation modal:', error);
-                await replyUsarError(btnInteraction, {
+                await replyUserError(btnInteraction, {
                     type: ErrorTypes.UNKNOWN,
                     message: 'No se pudo mostrar la confirmación. Inténtalo de nuevo.',
                 }).catch(() => {});
@@ -536,7 +536,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
                 }).catch(() => null);
 
                 if (!confirmSubmit) {
-                    await replyUsarError(btnInteraction, {
+                    await replyUserError(btnInteraction, {
                         type: ErrorTypes.VALIDATION,
                         message: 'Se canceló la eliminación de la postulación.',
                     });
@@ -545,7 +545,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
 
                 const confirmed = confirmSubmit.fields.getCheckbox('confirm_delete');
                 if (!confirmed) {
-                    await replyUsarError(confirmSubmit, { type: ErrorTypes.VALIDATION, message: 'Debes marcar la casilla de confirmación para eliminar la postulación.' });
+                    await replyUserError(confirmSubmit, { type: ErrorTypes.VALIDATION, message: 'Debes marcar la casilla de confirmación para eliminar la postulación.' });
                     return;
                 }
 
@@ -555,7 +555,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
 
             } catch (error) {
                 logger.error('Error confirming application deletion:', error);
-                await replyUsarError(btnInteraction, {
+                await replyUserError(btnInteraction, {
                     type: ErrorTypes.UNKNOWN,
                     message: 'Ocurrió un error al eliminar la postulación.',
                 });
@@ -569,7 +569,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
                     .setDescription('Esta sesión del panel expiró por inactividad (10 minutos).\n\nPara seguir configurando tus postulaciones, vuelve a usar el comando.')
                     .setColor(getColor('warning'));
                     
-                await InteractionAyudaer.safeEditReply(interaction, {
+                await InteractionHelper.safeEditReply(interaction, {
                     embeds: [timeoutEmbed],
                     components: [],
                 }).catch(() => {});
@@ -592,7 +592,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
                 
                 const roleIndex = roles.findIndex(r => r.roleId === selectedRoleId);
                 if (roleIndex === -1) {
-                    await replyUsarError(toggleInteraction, {
+                    await replyUserError(toggleInteraction, {
                         type: ErrorTypes.USER_INPUT,
                         message: 'No se encontró el rol de postulación.',
                     });
@@ -613,8 +613,8 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
                         wasEnabled ? '🔴 Postulación desactivada' : '🟢 Postulación activada',
                         `La postulación **${updatedRole.name}** ahora está **${wasEnabled ? 'desactivada' : 'activada'}**.\n\n${
                             wasEnabled 
-                                ? 'Esta postulación ya no aparecerá en las opciones de `/solicitar enviar`.' 
-                                : 'Esta postulación ahora aparecerá en las opciones de `/solicitar enviar`.'
+                                ? 'Esta postulación ya no aparecerá en las opciones de `/apply enviar`.' 
+                                : 'Esta postulación ahora aparecerá en las opciones de `/apply enviar`.'
                         }`,
                     )],
                     flags: MessageFlags.Ephemeral,
@@ -622,7 +622,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
 
             } catch (error) {
                 logger.error('Error toggling application status:', error);
-                await replyUsarError(toggleInteraction, {
+                await replyUserError(toggleInteraction, {
                     type: ErrorTypes.UNKNOWN,
                     message: 'Ocurrió un error al cambiar el estado de la postulación.',
                 });
@@ -636,7 +636,7 @@ function setupCollectors(interaction, settings, roles, guildId, client, selected
                     .setDescription('Esta sesión del panel expiró por inactividad (10 minutos).\n\nPara seguir configurando tus postulaciones, vuelve a usar el comando.')
                     .setColor(getColor('warning'));
                     
-                await InteractionAyudaer.safeEditReply(interaction, {
+                await InteractionHelper.safeEditReply(interaction, {
                     embeds: [timeoutEmbed],
                     components: [],
                 }).catch(() => {});
@@ -721,7 +721,7 @@ async function handleLogChannel(selectInteraction, rootInteraction, settings, ro
         }
 
         await modalSubmission.reply({
-            embeds: [successEmbed('Canal de registros actualizado', `Los registros de postulaciones ahora se enviarán a ${channel ?? `<#${channelId}>`}.\nTambién puedes administrarlo desde \`/registros dashboard\`.`)],
+            embeds: [successEmbed('Canal de registros actualizado', `Los registros de postulaciones ahora se enviarán a ${channel ?? `<#${channelId}>`}.\nTambién puedes administrarlo desde \`/logging dashboard\`.`)],
             flags: MessageFlags.Ephemeral,
         });
 
@@ -729,7 +729,7 @@ async function handleLogChannel(selectInteraction, rootInteraction, settings, ro
     } catch (error) {
         if (error.code === 'INTERACTION_TIMEOUT') return;
         logger.error('Error in log channel modal:', error);
-        await replyUsarError(selectInteraction, {
+        await replyUserError(selectInteraction, {
             type: ErrorTypes.UNKNOWN,
             message: 'Ocurrió un error al actualizar el canal de registros.',
         });
@@ -790,7 +790,7 @@ async function handleManagerRole(selectInteraction, rootInteraction, settings, r
     } catch (error) {
         if (error.code === 'INTERACTION_TIMEOUT') return;
         logger.error('Error in manager role modal:', error);
-        await replyUsarError(selectInteraction, {
+        await replyUserError(selectInteraction, {
             type: ErrorTypes.UNKNOWN,
             message: 'Ocurrió un error al actualizar los roles de gestión.',
         });
@@ -874,7 +874,7 @@ async function handleQuestions(selectInteraction, rootInteraction, settings, rol
         .filter(Boolean);
 
     if (newQuestions.length === 0) {
-        await replyUsarError(submitted, { type: ErrorTypes.USER_INPUT, message: 'Se requiere al menos una pregunta.' });
+        await replyUserError(submitted, { type: ErrorTypes.USER_INPUT, message: 'Se requiere al menos una pregunta.' });
         return;
     }
 
@@ -944,7 +944,7 @@ async function handleRoleAdd(selectInteraction, rootInteraction, settings, roles
         const customName = modalSubmission.fields.getTextInputValue('role_name').trim() || role?.name || roleId;
 
         if (roles.some(r => r.roleId === roleId)) {
-            await replyUsarError(modalSubmission, { type: ErrorTypes.UNKNOWN, message: `${role ?? roleId} ya es un rol de postulación.` });
+            await replyUserError(modalSubmission, { type: ErrorTypes.UNKNOWN, message: `${role ?? roleId} ya es un rol de postulación.` });
             return;
         }
 
@@ -963,7 +963,7 @@ async function handleRoleAdd(selectInteraction, rootInteraction, settings, roles
     } catch (error) {
         if (error.code === 'INTERACTION_TIMEOUT') return;
         logger.error('Error in role add modal:', error);
-        await replyUsarError(selectInteraction, {
+        await replyUserError(selectInteraction, {
             type: ErrorTypes.UNKNOWN,
             message: 'Ocurrió un error al agregar el rol de postulación.',
         });
@@ -972,7 +972,7 @@ async function handleRoleAdd(selectInteraction, rootInteraction, settings, roles
 
 async function handleRoleRemove(selectInteraction, rootInteraction, settings, roles, guildId, client) {
     if (roles.length === 0) {
-        await replyUsarError(selectInteraction, {
+        await replyUserError(selectInteraction, {
             type: ErrorTypes.USER_INPUT,
             message: 'No hay roles de postulación configurados para quitar.',
         });
@@ -1009,7 +1009,7 @@ async function handleRoleRemove(selectInteraction, rootInteraction, settings, ro
         const index = roles.findIndex(r => r.roleId === roleId);
 
         if (index === -1) {
-            await replyUsarError(modalSubmission, { type: ErrorTypes.USER_INPUT, message: `<@&${roleId}> no está en la lista de roles de postulación.` });
+            await replyUserError(modalSubmission, { type: ErrorTypes.USER_INPUT, message: `<@&${roleId}> no está en la lista de roles de postulación.` });
             return;
         }
 
@@ -1025,7 +1025,7 @@ async function handleRoleRemove(selectInteraction, rootInteraction, settings, ro
     } catch (error) {
         if (error.code === 'INTERACTION_TIMEOUT') return;
         logger.error('Error in role remove modal:', error);
-        await replyUsarError(selectInteraction, {
+        await replyUserError(selectInteraction, {
             type: ErrorTypes.UNKNOWN,
             message: 'Ocurrió un error al quitar el rol de postulación.',
         });
@@ -1088,12 +1088,12 @@ async function handleRetention(selectInteraction, rootInteraction, settings, rol
     const reviewedDays = parseInt(submitted.fields.getTextInputValue('reviewed_days').trim(), 10);
 
     if (isNaN(pendingDays) || pendingDays < 1 || pendingDays > 3650) {
-        await replyUsarError(submitted, { type: ErrorTypes.VALIDATION, message: 'La retención de pendientes debe ser un número entero entre **1** y **3650** días.' });
+        await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'La retención de pendientes debe ser un número entero entre **1** y **3650** días.' });
         return;
     }
 
     if (isNaN(reviewedDays) || reviewedDays < 1 || reviewedDays > 3650) {
-        await replyUsarError(submitted, { type: ErrorTypes.VALIDATION, message: 'La retención de revisadas debe ser un número entero entre **1** y **3650** días.' });
+        await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'La retención de revisadas debe ser un número entero entre **1** y **3650** días.' });
         return;
     }
 
@@ -1119,7 +1119,7 @@ async function handleDeleteApplication(confirmSubmit, selectedRoleId, guildId, r
         
         const roleIndex = roles.findIndex(r => r.roleId === selectedRoleId);
         if (roleIndex === -1) {
-            await replyUsarError(confirmSubmit, { type: ErrorTypes.USER_INPUT, message: 'No se encontró el rol de postulación.' });
+            await replyUserError(confirmSubmit, { type: ErrorTypes.USER_INPUT, message: 'No se encontró el rol de postulación.' });
             return;
         }
 
@@ -1151,6 +1151,6 @@ async function handleDeleteApplication(confirmSubmit, selectedRoleId, guildId, r
 
     } catch (error) {
         logger.error('Error in handleDeleteApplication:', error);
-        await replyUsarError(confirmSubmit, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al eliminar la postulación. Inténtalo de nuevo.' });
+        await replyUserError(confirmSubmit, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al eliminar la postulación. Inténtalo de nuevo.' });
     }
 }

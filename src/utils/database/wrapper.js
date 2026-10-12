@@ -33,7 +33,7 @@ class DatabaseWrapper {
             const pgFailure = pgDb.getLastFailure?.();
             if (pgFailure?.reason === 'SCHEMA_VERSION_MISMATCH') {
                 const schemaError = new Error(
-                    `Schema version mismatch detected (${pgFailure.message}). Ejecuta migrations before startup.`,
+                    `Schema version mismatch detected (${pgFailure.message}). Run migrations before startup.`,
                 );
                 schemaError.code = 'SCHEMA_VERSION_MISMATCH';
                 throw schemaError;
@@ -135,7 +135,7 @@ class DatabaseWrapper {
             connectionType: this.connectionType,
             isDegraded: this.useFallback,
             isAvailable: this.isAvailable(),
-            degradedMotivo: this.degradedReason,
+            degradedReason: this.degradedReason,
         };
     }
 

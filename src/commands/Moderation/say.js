@@ -7,8 +7,8 @@ import {
 import { successEmbed } from '../../utils/embeds.js';
 import { logEvent } from '../../utils/moderation.js';
 import { logger } from '../../utils/logger.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 import { sanitizeInput } from '../../utils/validation.js';
 
 const TEXT_CHANNEL_TYPES = [
@@ -31,19 +31,19 @@ function resolveTargetChannel(interaction) {
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('decir')
-        .setDescription('Send a plain message as the bot')
+        .setName('say')
+        .setDescription('Envía un mensaje de texto como el bot')
         .addStringOption((option) =>
             option
                 .setName('message')
-                .setDescription('The message the bot should send')
+                .setDescription('Mensaje que enviará el bot')
                 .setRequired(true)
                 .setMaxLength(2000),
         )
         .addChannelOption((option) =>
             option
                 .setName('channel')
-                .setDescription('Channel to send in (defaults to the current channel)')
+                .setDescription('Canal donde se enviará (por defecto, el canal actual)')
                 .addChannelTypes(...TEXT_CHANNEL_TYPES)
                 .setRequired(false),
         )
@@ -53,7 +53,7 @@ export default {
     abuseProtection: { maxAttempts: 8, windowMs: 60_000 },
 
     async execute(interaction, _config, client) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction, {
+        const deferSuccess = await InteractionHelper.safeDefer(interaction, {
             flags: MessageFlags.Ephemeral,
         });
         if (!deferSuccess) {
@@ -69,17 +69,17 @@ export default {
         const message = sanitizeInput(rawMessage, 2000);
 
         if (!message) {
-            return replyUsarError(interaction, {
+            return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: 'Message cannot be empty.',
+                message: 'El mensaje no puede estar vacío.',
             });
         }
 
         const channel = resolveTargetChannel(interaction);
         if (!channel) {
-            return replyUsarError(interaction, {
+            return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: 'Choose a text channel or run this command in one.',
+                message: 'Elige un canal de texto o ejecuta este comando en uno.',
             });
         }
 
@@ -87,16 +87,16 @@ export default {
         const botPermissions = channel.permissionsFor(interaction.guild.members.me);
 
         if (!memberPermissions?.has(PermissionFlagsBits.SendMessages)) {
-            return replyUsarError(interaction, {
+            return replyUserError(interaction, {
                 type: ErrorTypes.PERMISSION,
-                message: `You do not have permission to send messages in ${channel}.`,
+                message: `No tienes permiso para enviar mensajes en ${channel}.`,
             });
         }
 
         if (!botPermissions?.has(PermissionFlagsBits.SendMessages)) {
-            return replyUsarError(interaction, {
+            return replyUserError(interaction, {
                 type: ErrorTypes.PERMISSION,
-                message: `I do not have permission to send messages in ${channel}.`,
+                message: `No tengo permiso para enviar mensajes en ${channel}.`,
             });
         }
 
@@ -121,7 +121,7 @@ export default {
             },
         });
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
                     'Message Sent',

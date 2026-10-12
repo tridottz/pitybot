@@ -1,17 +1,17 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { successEmbed } from '../../utils/embeds.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { ModerationService } from '../../services/moderation/moderationService.js';
 import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("banear")
-        .setDescription("Expulsa permanentemente a un usuario del servidor")
-        .addUsarOption((option) =>
+        .setName("ban")
+        .setDescription("Banea a un usuario del servidor")
+        .addUserOption((option) =>
             option
                 .setName("target")
-                .setDescription("El usuario que quieres banear")
+                .setDescription("Usuario que quieres banear")
                 .setRequired(true),
         )
         .addStringOption((option) =>
@@ -21,41 +21,41 @@ export default {
     category: "moderation",
 
     async execute(interaction, config, client) {
-        const user = interaction.options.getUsar("target");
-        const reason = interaction.options.getString("reason") || "No se proporcionó un motivo";
+        const user = interaction.options.getUser("target");
+        const reason = interaction.options.getString("reason") || "No reason provided";
 
         if (!user) {
             throw new TitanBotError(
-                'Falta el usuario de destino',
+                'Missing target user',
                 ErrorTypes.USER_INPUT,
-                'Debes especificar a un usuario para banearlo.',
+                'Debes indicar un usuario para vetar.',
                 { subtype: 'invalid_user' },
             );
         }
 
         if (user.id === interaction.user.id) {
             throw new TitanBotError(
-                'No puedes banearte a ti mismo',
+                'Cannot ban self',
                 ErrorTypes.VALIDATION,
-                'No puedes banearte a ti mismo.',
+                'No puedes vetarte a ti mismo.',
             );
         }
         if (user.id === client.user.id) {
             throw new TitanBotError(
-                'No puedes banear al bot',
+                'Cannot ban bot',
                 ErrorTypes.VALIDATION,
-                'No puedes banear al bot.',
+                'No puedes vetar al bot.',
             );
         }
 
-        const result = await ModerationService.banUsar({
+        const result = await ModerationService.banUser({
             guild: interaction.guild,
             user,
             moderator: interaction.member,
             reason,
         });
 
-        await InteractionAyudaer.universalReply(interaction, {
+        await InteractionHelper.universalReply(interaction, {
             embeds: [
                 successEmbed(
                     `🚫 **Baneado** ${user.tag}`,

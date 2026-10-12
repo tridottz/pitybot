@@ -113,8 +113,8 @@ export function buildOverviewEmbed(snapshot, guild) {
     name: 'Cómo usar',
     value: [
       '• Selecciona una categoría abajo para administrar sus comandos y subcomandos',
-      '• `/comandos desactivar` — apaga una categoría o un comando específico',
-      '• `/comandos activar` — vuelve a encender algo',
+      '• `/commands desactivar` — apaga una categoría o un comando específico',
+      '• `/commands activar` — vuelve a encender algo',
     ].join('\n'),
   });
 

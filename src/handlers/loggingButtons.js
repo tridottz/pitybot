@@ -7,7 +7,7 @@ import {
   ModalBuilder,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
-  UsarSelectMenuBuilder,
+  UserSelectMenuBuilder,
 } from 'discord.js';
 import {
   toggleEventLogging,
@@ -17,10 +17,10 @@ import {
   setLogChannel,
   updateIgnoreList,
   getIgnoreList,
-} from '../services/registrosService.js';
+} from '../services/loggingService.js';
 import { getGuildConfig } from '../services/config/guildConfig.js';
 import { successEmbed } from '../utils/embeds.js';
-import { replyUsarError, ErrorTypes, handleInteractionError } from '../utils/errorHandler.js';
+import { replyUserError, ErrorTypes, handleInteractionError } from '../utils/errorHandler.js';
 import { logger } from '../utils/logger.js';
 import {
   buildLoggingDashboardView,
@@ -29,7 +29,7 @@ import {
   isCategoriesView,
   isFilterView,
   refreshDashboardMessage,
-} from '../comandos/Logging/modules/registros_dashboard.js';
+} from '../commands/Logging/modules/logging_dashboard.js';
 
 const LOGGING_CATEGORIES = [...new Set(Object.values(EVENT_TYPES).map((eventType) => eventType.split('.')[0]))];
 
@@ -52,7 +52,7 @@ export default {
     try {
       if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
         return interaction.reply({
-          content: '❌ You need **Manage Server** permissions to use this.',
+          content: '❌ Necesitas el permiso **Gestionar servidor** para usar esta opción.',
           ephemeral: true,
         });
       }
@@ -109,7 +109,7 @@ async function handleBackToMain(interaction) {
 async function handleToggle(interaction) {
   const eventType = interaction.customId.replace('log_dash_toggle:', '');
   if (!eventType) {
-    return interaction.reply({ content: '❌ Invalid event type.', ephemeral: true });
+    return interaction.reply({ content: '❌ Tipo de evento no válido.', ephemeral: true });
   }
 
   const status = await getLoggingStatus(interaction.client, interaction.guildId);
@@ -139,44 +139,44 @@ async function handleToggle(interaction) {
 async function handleAddFilterModal(interaction) {
   const filterType = interaction.customId.replace('log_dash_add_filter:', '');
   if (filterType !== 'user' && filterType !== 'channel') {
-    return interaction.reply({ content: '❌ Invalid filter type.', ephemeral: true });
+    return interaction.reply({ content: '❌ Tipo de filtro no válido.', ephemeral: true });
   }
 
   const modalCustomId = `log_dash_filter_modal:add:${filterType}`;
 
   let modal;
   if (filterType === 'user') {
-    const userSelect = new UsarSelectMenuBuilder()
+    const userSelect = new UserSelectMenuBuilder()
       .setCustomId('ignore_user')
-      .setPlaceholder('Select a user to ignore…')
+      .setPlaceholder('Selecciona un usuario para ignorar…')
       .setMinValues(1)
       .setMaxValues(1);
 
     const userLabel = new LabelBuilder()
-      .setLabel('Usar to Ignore')
-      .setDescription('Choose a user whose actions should not be logged')
-      .setUsarSelectMenuComponent(userSelect);
+      .setLabel('Usuario que se ignorará')
+      .setDescription('Elige un usuario cuyas acciones no se registrarán')
+      .setUserSelectMenuComponent(userSelect);
 
     modal = new ModalBuilder()
       .setCustomId(modalCustomId)
-      .setTitle('Add Usar Filter')
+      .setTitle('Añadir filtro de usuario')
       .addLabelComponents(userLabel);
   } else {
     const channelSelect = new ChannelSelectMenuBuilder()
       .setCustomId('ignore_channel')
-      .setPlaceholder('Select a channel to ignore…')
+      .setPlaceholder('Selecciona un canal para ignorar…')
       .setMinValues(1)
       .setMaxValues(1)
       .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement, ChannelType.GuildVoice);
 
     const channelLabel = new LabelBuilder()
-      .setLabel('Channel to Ignore')
-      .setDescription('Choose a channel whose events should not be logged')
+      .setLabel('Canal que se ignorará')
+      .setDescription('Elige un canal cuyos eventos no se registrarán')
       .setChannelSelectMenuComponent(channelSelect);
 
     modal = new ModalBuilder()
       .setCustomId(modalCustomId)
-      .setTitle('Add Channel Filter')
+      .setTitle('Añadir filtro de canal')
       .addLabelComponents(channelLabel);
   }
 
@@ -196,16 +196,16 @@ async function handleAddFilterModal(interaction) {
     }
 
     if (!id) {
-      return replyUsarError(modalSubmission, {
+      return replyUserError(modalSubmission, {
         type: ErrorTypes.VALIDATION,
-        message: `Please select a ${filterType} to ignore.`,
+        message: `Selecciona ${filterType === 'user' ? 'un usuario' : 'un canal'} para excluir.`,
       });
     }
 
     await updateIgnoreList(interaction.client, interaction.guildId, { action: 'add', type: filterType, id });
 
     await modalSubmission.reply({
-      embeds: [successEmbed('Filter Added', `${filterType === 'user' ? 'Usar' : 'Channel'} \`${id}\` will be ignored in audit logs.`)],
+      embeds: [successEmbed('Filtro añadido', `${filterType === 'user' ? 'El usuario' : 'El canal'} \`${id}\` se ignorará en los registros de auditoría.`)],
       flags: MessageFlags.Ephemeral,
     });
 
@@ -228,8 +228,8 @@ async function handleRemoveFilterModal(interaction) {
   for (const userId of ignore.users || []) {
     options.push(
       new StringSelectMenuOptionBuilder()
-        .setLabel(`Usar ${userId}`)
-        .setDescription('Remove this user from the ignore list')
+        .setLabel(`Usuario ${userId}`)
+        .setDescription('Quita este usuario de la lista de exclusión')
         .setValue(`user:${userId}`),
     );
   }
@@ -237,16 +237,16 @@ async function handleRemoveFilterModal(interaction) {
   for (const channelId of ignore.channels || []) {
     options.push(
       new StringSelectMenuOptionBuilder()
-        .setLabel(`Channel ${channelId}`)
-        .setDescription('Remove this channel from the ignore list')
+        .setLabel(`Canal ${channelId}`)
+        .setDescription('Quita este canal de la lista de exclusión')
         .setValue(`channel:${channelId}`),
     );
   }
 
   if (options.length === 0) {
-    return replyUsarError(interaction, {
+    return replyUserError(interaction, {
       type: ErrorTypes.USER_INPUT,
-      message: 'There are no ignore filters to remove.',
+      message: 'No hay filtros de exclusión para quitar.',
     });
   }
 
@@ -254,19 +254,19 @@ async function handleRemoveFilterModal(interaction) {
 
   const filterSelect = new StringSelectMenuBuilder()
     .setCustomId('filter_entry')
-    .setPlaceholder('Select a filter to remove…')
+    .setPlaceholder('Selecciona un filtro para quitar…')
     .setMinValues(1)
     .setMaxValues(1)
     .addOptions(options.slice(0, 25));
 
   const filterLabel = new LabelBuilder()
-    .setLabel('Filter to Remove')
-    .setDescription('Choose a user or channel to un-ignore')
+    .setLabel('Filtro que se quitará')
+    .setDescription('Elige un usuario o canal para dejar de ignorarlo')
     .setStringSelectMenuComponent(filterSelect);
 
   const modal = new ModalBuilder()
     .setCustomId(modalCustomId)
-    .setTitle('Remove Ignore Filter')
+    .setTitle('Quitar filtro de exclusión')
     .addLabelComponents(filterLabel);
 
   await interaction.showModal(modal);
@@ -279,9 +279,9 @@ async function handleRemoveFilterModal(interaction) {
 
     const entry = modalSubmission.fields.getField('filter_entry')?.values?.[0];
     if (!entry) {
-      return replyUsarError(modalSubmission, {
+      return replyUserError(modalSubmission, {
         type: ErrorTypes.VALIDATION,
-        message: 'Please select a filter to remove.',
+        message: 'Selecciona un filtro para quitar.',
       });
     }
 
@@ -289,7 +289,7 @@ async function handleRemoveFilterModal(interaction) {
     await updateIgnoreList(interaction.client, interaction.guildId, { action: 'remove', type, id });
 
     await modalSubmission.reply({
-      embeds: [successEmbed('Filter Removed', `Removed ${type} \`${id}\` from the ignore list.`)],
+      embeds: [successEmbed('Filtro quitado', `Se quitó ${type === 'user' ? 'al usuario' : 'al canal'} \`${id}\` de la lista de exclusión.`)],
       flags: MessageFlags.Ephemeral,
     });
 
@@ -310,20 +310,20 @@ async function showChannelModal(interaction, destination) {
 
   const channelSelect = new ChannelSelectMenuBuilder()
     .setCustomId('log_channel')
-    .setPlaceholder('Select a text channel…')
+    .setPlaceholder('Selecciona un canal de texto…')
     .setMinValues(1)
     .setMaxValues(1)
     .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
     .setRequired(true);
 
   const channelLabel = new LabelBuilder()
-    .setLabel(`${label} Channel`)
-    .setDescription(`Channel where ${label.toLowerCase()} logs will be sent`)
+    .setLabel(`Canal de ${label}`)
+    .setDescription(`Canal donde se enviarán los registros de ${label.toLowerCase()}`)
     .setChannelSelectMenuComponent(channelSelect);
 
   const modal = new ModalBuilder()
     .setCustomId(modalCustomId)
-    .setTitle(`Set ${label} Channel`)
+    .setTitle(`Configurar canal de ${label}`)
     .addLabelComponents(channelLabel);
 
   await interaction.showModal(modal);
@@ -340,7 +340,7 @@ async function showChannelModal(interaction, destination) {
 
     if (!channel) {
       return modalSubmission.reply({
-        content: '❌ That channel could not be found.',
+        content: '❌ No se encontró ese canal.',
         flags: MessageFlags.Ephemeral,
       });
     }
@@ -348,7 +348,7 @@ async function showChannelModal(interaction, destination) {
     const botPerms = channel.permissionsFor(interaction.guild.members.me);
     if (!botPerms?.has(['ViewChannel', 'SendMessages', 'EmbedLinks'])) {
       return modalSubmission.reply({
-        content: '❌ I need View Channel, Send Messages, and Embed Links in that channel.',
+        content: '❌ Necesito los permisos Ver canal, Enviar mensajes e Insertar enlaces en ese canal.',
         flags: MessageFlags.Ephemeral,
       });
     }
@@ -356,7 +356,7 @@ async function showChannelModal(interaction, destination) {
     await setLogChannel(interaction.client, interaction.guildId, destination, channel.id);
 
     await modalSubmission.reply({
-      embeds: [successEmbed('Channel Updated', `**${label}** logs will be sent to ${channel}.`)],
+      embeds: [successEmbed('Canal actualizado', `Los registros de **${label}** se enviarán a ${channel}.`)],
       flags: MessageFlags.Ephemeral,
     });
 
@@ -376,7 +376,7 @@ async function showChannelModal(interaction, destination) {
 export async function handleLoggingMenuSelect(interaction) {
   if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
     return interaction.reply({
-      content: '❌ You need **Manage Server** permissions to use this.',
+      content: '❌ Necesitas el permiso **Gestionar servidor** para usar esta opción.',
       ephemeral: true,
     });
   }
@@ -409,5 +409,5 @@ export async function handleLoggingMenuSelect(interaction) {
     return interaction.update({ embeds: [embed], components, content: null });
   }
 
-  return interaction.reply({ content: '❌ Unknown option.', ephemeral: true });
+  return interaction.reply({ content: '❌ Opción desconocida.', ephemeral: true });
 }

@@ -53,7 +53,7 @@ async function getAllFiles(directory, fileList = []) {
 
 export async function loadCommands(client) {
     client.commands = new Collection();
-    const commandsPath = path.join(__dirname, '../../comandos');
+    const commandsPath = path.join(__dirname, '../../commands');
     const commandFiles = await getAllFiles(commandsPath);
     
     logger.info(`Found ${commandFiles.length} command files to load`);
@@ -254,11 +254,11 @@ async function registerGlobalCommands(client, clientId, commands, totalSubcomman
 
     if (botConfig.commands?.deleteCommands) {
         logger.info('Clearing existing global commands before registration...');
-        await client.rest.put(`/applications/${clientId}/comandos`, { body: [] });
+        await client.rest.put(`/applications/${clientId}/commands`, { body: [] });
     }
 
     logger.info(`Registering ${commandsToRegister.length} global commands...`);
-    await client.rest.put(`/applications/${clientId}/comandos`, { body: commandsToRegister });
+    await client.rest.put(`/applications/${clientId}/commands`, { body: commandsToRegister });
     logger.info(`Successfully registered ${commandsToRegister.length} global commands`);
     logger.info('Global commands may take up to an hour to appear in all servers on first deploy');
 }

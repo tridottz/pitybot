@@ -23,9 +23,9 @@ export const botConfig = {
     // 5 = Competing
     activities: [
       {
-        name: "a la tripulacion", // required by Discord API, not shown in the client
-        state: "Y ronroneando",     // this is what people actually see
-        type: 2,               // Custom
+        name: "La comunidad de 4411", // required by Discord API, not shown in the client
+        state: "Hola 4411",     // this is what people actually see
+        type: 3,               // Custom
       },
     ],
   },
@@ -96,7 +96,7 @@ export const botConfig = {
       primary: "#bfbfbf",
       secondary: "#6699ff",
 
-      // Standard status colors for success/error/advertiring/info messages.
+      // Standard status colors for success/error/warning/info messages.
       success: "#57F287",
       error: "#ED4245",
       warning: "#FEE75C",
@@ -216,7 +216,7 @@ export const botConfig = {
     // Category ID where new tickets are created (null = no forced category).
     defaultCategory: null,
 
-    // Role IDs allowed to manage/soporte tickets.
+    // Role IDs allowed to manage/support tickets.
     supportRoles: [],
 
     // Priority options users/staff can assign.
@@ -332,7 +332,7 @@ export const botConfig = {
 
       // Human-readable descriptions for each criteria mode.
       criteria: {
-        account_age: "Account must be older than specified days",
+        account_age: "La cuenta debe tener al menos la antigüedad indicada",
         server_size: "All users if server has less than 1000 members",
         none: "All users immediately"
       }
@@ -372,7 +372,7 @@ export const botConfig = {
     // Welcome template posted when a user joins.
     // Placeholders: {user}, {server}, {memberCount}
     defaultWelcomeMessage:
-      "Te doy la bienvenida {user} to {server}! Ahora somos {memberCount} miembros!",
+      "¡Te damos la bienvenida, {user}, a {server}! Ahora somos {memberCount} miembros.",
     // Goodbye template posted when a user leaves.
     // Placeholders: {user}, {memberCount}
     defaultGoodbyeMessage:
@@ -434,13 +434,13 @@ export const botConfig = {
   // GENERIC BOT MESSAGES
   // =========================
   messages: {
-    noPermission: "You do not have permission to use this command.",
-    cooldownActive: "Please wait {time} before using this command again.",
-    errorOccurred: "An error occurred while executing this command.",
+    noPermission: "No tienes permiso para usar este comando.",
+    cooldownActive: "Espera {time} antes de volver a usar este comando.",
+    errorOccurred: "Ocurrió un error al ejecutar este comando.",
     missingPermissions:
-      "I am missing required permissions to perform this action.",
-    commandDisabled: "This command has been disabled.",
-    maintenanceMode: "The bot is currently in maintenance mode.",
+      "Me faltan permisos para realizar esta acción.",
+    commandDisabled: "Este comando está desactivado.",
+    maintenanceMode: "El bot está en mantenimiento en este momento.",
   },
 
   // =========================

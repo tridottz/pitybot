@@ -1,8 +1,8 @@
 import { createRequire } from 'module';
 import { GatewayDispatchEvents } from 'discord.js';
 import { logger } from '../../utils/logger.js';
-import lavalinkConfig from '../../config/musica/lavalink.js';
-import { setupPlayerHandler } from './reproducirerHandler.js';
+import lavalinkConfig from '../../config/music/lavalink.js';
+import { setupPlayerHandler } from './playerHandler.js';
 
 const require = createRequire(import.meta.url);
 const { Riffy } = require('riffy');

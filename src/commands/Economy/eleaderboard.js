@@ -2,17 +2,17 @@ import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
 import { logger } from '../../utils/logger.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { getEconomyPrefix } from '../../utils/database.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("top-economia")
-        .setDescription("Muestra a los 10 usuarios más ricos del servidor.")
+        .setName("eleaderboard")
+        .setDescription("Consulta a los 10 usuarios más ricos del servidor.")
         .setDMPermission(false),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionAyudaer.safeDefer(interaction);
+        const deferred = await InteractionHelper.safeDefer(interaction);
         if (!deferred) return;
 
             const guildId = interaction.guildId;
@@ -35,31 +35,31 @@ export default {
                 );
             }
 
-            let allUsarData = [];
+            let allUserData = [];
 
             for (const key of allKeys) {
                 const userId = key.replace(prefix, "");
                 const userData = await client.db.get(key);
 
                 if (userData) {
-                    allUsarData.push({
+                    allUserData.push({
                         userId: userId,
                         net_worth: (userData.wallet || 0) + (userData.bank || 0),
                     });
                 }
             }
 
-            allUsarData.sort((a, b) => b.net_worth - a.net_worth);
+            allUserData.sort((a, b) => b.net_worth - a.net_worth);
 
-            const topUsars = allUsarData.slice(0, 10);
+            const topUsers = allUserData.slice(0, 10);
             const userRank =
-                allUsarData.findIndex((u) => u.userId === interaction.user.id) +
+                allUserData.findIndex((u) => u.userId === interaction.user.id) +
                 1;
             const rankEmoji = ["🥇", "🥈", "🥉"];
             const leaderboardEntries = [];
 
-            for (let i = 0; i < topUsars.length; i++) {
-                const user = topUsars[i];
+            for (let i = 0; i < topUsers.length; i++) {
+                const user = topUsers[i];
                 const rank = i + 1;
                 const emoji = rankEmoji[i] || `**#${rank}**`;
 
@@ -70,20 +70,20 @@ export default {
 
             logger.info(`[ECONOMY] Leaderboard generated`, { 
                 guildId, 
-                userCount: allUsarData.length,
+                userCount: allUserData.length,
                 userRank 
             });
 
             const description = leaderboardEntries.length > 0
                 ? leaderboardEntries.join("\n")
-                : "No economy data is available for this server yet.";
+                : "Aún no hay datos de economía para este servidor.";
 
             const embed = createEmbed({
-                title: `Economy Leaderboard`,
+                title: `Clasificación de economía`,
                 description,
-                footer: `Your Rank: ${userRank > 0 ?`#${userRank}`: "No ranking data available"}`,
+                footer: `Tu posición: ${userRank > 0 ?`#${userRank}`: "Sin clasificación"}`,
             });
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
     }, { command: 'eleaderboard' })
 };

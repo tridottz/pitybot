@@ -1,17 +1,17 @@
 import { Events } from 'discord.js';
-import { logEvent, EVENT_TYPES } from '../services/registrosService.js';
+import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
 import { logger } from '../utils/logger.js';
 
 export default {
-  name: Events.UsarUpdate,
+  name: Events.UserUpdate,
   once: false,
 
-  async execute(oldUsar, newUsar) {
+  async execute(oldUser, newUser) {
     try {
-      if (oldUsar.bot) return;
+      if (oldUser.bot) return;
 
-      const usernameChanged = oldUsar.username !== newUsar.username;
-      const discriminatorChanged = oldUsar.discriminator !== newUsar.discriminator;
+      const usernameChanged = oldUser.username !== newUser.username;
+      const discriminatorChanged = oldUser.discriminator !== newUser.discriminator;
 
       if (!usernameChanged && !discriminatorChanged) return;
 
@@ -19,13 +19,13 @@ export default {
 
       if (usernameChanged) {
         fields.push({
-          name: '🏷️ Old Usarname',
-          value: oldUsar.username,
+          name: '🏷️ Old Username',
+          value: oldUser.username,
           inline: true
         });
         fields.push({
-          name: '🏷️ New Usarname',
-          value: newUsar.username,
+          name: '🏷️ New Username',
+          value: newUser.username,
           inline: true
         });
       }
@@ -33,31 +33,31 @@ export default {
       if (discriminatorChanged) {
         fields.push({
           name: '🔢 Old Tag',
-          value: `#${oldUsar.discriminator}`,
+          value: `#${oldUser.discriminator}`,
           inline: true
         });
         fields.push({
           name: '🔢 New Tag',
-          value: `#${newUsar.discriminator}`,
+          value: `#${newUser.discriminator}`,
           inline: true
         });
       }
 
-      const guilds = [...newUsar.client.guilds.cache.values()];
+      const guilds = [...newUser.client.guilds.cache.values()];
       for (const guild of guilds) {
-        if (!guild.members.cache.has(newUsar.id)) continue;
+        if (!guild.members.cache.has(newUser.id)) continue;
 
         await logEvent({
-          client: newUsar.client,
+          client: newUser.client,
           guildId: guild.id,
           eventType: EVENT_TYPES.MEMBER_NAME_CHANGE,
           data: {
-            description: `${newUsar.tag} updated their username`,
-            userId: newUsar.id,
+            description: `${newUser.tag} updated their username`,
+            userId: newUser.id,
             fields: [
               {
-                name: '👤 Usar',
-                value: `${newUsar.tag} (${newUsar.id})`,
+                name: '👤 User',
+                value: `${newUser.tag} (${newUser.id})`,
                 inline: true
               },
               ...fields
@@ -66,7 +66,7 @@ export default {
         });
       }
 
-      logger.debug(`Processed userUpdate for ${newUsar.id} across ${guilds.length} guild(s)`);
+      logger.debug(`Processed userUpdate for ${newUser.id} across ${guilds.length} guild(s)`);
     } catch (error) {
       logger.error('Error in userUpdate event:', error);
     }

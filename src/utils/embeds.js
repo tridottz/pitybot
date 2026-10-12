@@ -227,23 +227,23 @@ export function createEmbed({
 }
 
 const NOTIFICATION_DEFAULT_TITLES = {
-  success: 'Success',
+  success: 'Éxito',
   error: 'Error',
-  info: 'Information',
-  warning: 'Warning',
-  primary: 'Notice',
+  info: 'Información',
+  warning: 'Advertencia',
+  primary: 'Aviso',
 };
 
 export const USER_ERROR_TITLES = {
-  validation: 'Invalid Input',
-  permission: 'Permission Denied',
-  configuration: 'Configuration Error',
-  database: 'Database Error',
-  network: 'Network Error',
-  discord_api: 'Discord API Error',
-  user_input: 'Input Error',
-  rate_limit: 'Too Fast',
-  unknown: 'Something Went Wrong',
+  validation: 'Datos no válidos',
+  permission: 'Permiso denegado',
+  configuration: 'Error de configuración',
+  database: 'Error de base de datos',
+  network: 'Error de red',
+  discord_api: 'Error de la API de Discord',
+  user_input: 'Entrada no válida',
+  rate_limit: 'Demasiadas solicitudes',
+  unknown: 'Ocurrió un error',
 };
 
 const USER_ERROR_COLORS = {
@@ -256,7 +256,7 @@ const USER_ERROR_COLORS = {
  * @param {string} [description] - Specific, actionable message for the user
  * @param {{ titleOverride?: string }} [options]
  */
-export function buildUsarErrorEmbed(errorType, description = '', options = {}) {
+export function buildUserErrorEmbed(errorType, description = '', options = {}) {
   const type = errorType || 'unknown';
   const title = options.titleOverride || USER_ERROR_TITLES[type] || USER_ERROR_TITLES.unknown;
   const color = USER_ERROR_COLORS[type] || 'error';
@@ -291,7 +291,7 @@ function buildNotificationEmbed(title, body = '', color = 'primary') {
 }
 
 /**
- * @deprecated Prefer buildUsarErrorEmbed or replyUsarError from errorHandler.js.
+ * @deprecated Prefer buildUserErrorEmbed or replyUserError from errorHandler.js.
  */
 export function errorEmbed(title, detail = null, options = {}) {
   const { showDetails = process.env.NODE_ENV !== 'production' } = options;
@@ -305,7 +305,7 @@ export function errorEmbed(title, detail = null, options = {}) {
   const description = body ? String(body).trim() : '';
   const titleOverride = title && title !== 'Error' ? title : undefined;
 
-  return buildUsarErrorEmbed('unknown', description, { titleOverride });
+  return buildUserErrorEmbed('unknown', description, { titleOverride });
 }
 
 /** @param {string} titleOrBody - With one arg: body text. With two args: title and body. */
@@ -335,7 +335,7 @@ export function warningEmbed(title, body = '') {
   return buildNotificationEmbed(title || 'Warning', body, 'warning');
 }
 
-export function formatUsar(user) {
+export function formatUser(user) {
   return `${user} (${user.tag} | ${user.id})`;
 }
 

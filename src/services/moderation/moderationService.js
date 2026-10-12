@@ -18,7 +18,7 @@ export class ModerationService {
   static buildHierarchyMessage({ actor, actorRole, targetRole, targetLabel, action }) {
     if (actor === 'moderator') {
       return (
-        `You cannot ${action} **${targetLabel}** — their role **${targetRole.name}** is equal to or above yours (**${actorRole.name}**). ` +
+        `No puedes ${action} a **${targetLabel}**: su rol **${targetRole.name}** está al mismo nivel o por encima del tuyo (**${actorRole.name}**). ` +
         `In **Server Settings → Roles**, drag your moderator role above **${targetRole.name}**.`
       );
     }
@@ -46,7 +46,7 @@ export class ModerationService {
     if (!modRole || !targetRole) {
       return `Role hierarchy blocked ${action} for ${targetLabel}`;
     }
-    return `Your role **${modRole.name}** is too low for **${targetRole.name}** — move your role higher`;
+    return `Tu rol **${modRole.name}** está por debajo de **${targetRole.name}**. Sube tu rol en la jerarquía.`;
   }
 
   static validateHierarchy(moderator, target, action) {
@@ -64,7 +64,7 @@ export class ModerationService {
     if (!modRole || !targetRole) {
       return {
         valid: false,
-        error: 'Could not resolve role hierarchy. Try mentioning the user or use the slash command.',
+        error: 'No se pudo determinar la jerarquía de roles. Menciona al usuario o usa el comando de barra.',
       };
     }
 
@@ -100,7 +100,7 @@ export class ModerationService {
     if (!botRole || !targetRole) {
       return {
         valid: false,
-        error: 'Could not resolve bot role hierarchy. Check that my role is configured in this server.',
+        error: 'No se pudo determinar la jerarquía de roles del bot. Revisa la configuración de mi rol en este servidor.',
       };
     }
 
@@ -132,11 +132,11 @@ export class ModerationService {
     }
   }
 
-  static async banUsar({
+  static async banUser({
     guild,
     user,
     moderator,
-    reason = 'No se proporcionó un motivo',
+    reason = 'No reason provided',
     deleteDays = 0
   }) {
     try {
@@ -169,7 +169,7 @@ export class ModerationService {
             throw new TitanBotError(
                 'You do not have sufficient permissions to ban users who are not in the server.',
                 ErrorTypes.PERMISSION,
-                'You need "Manage Server" or "Administrator" permissions to ban users not currently in the guild.'
+                'Necesitas el permiso "Administrar servidor" o "Administrador" para vetar a usuarios que no estén en el servidor.'
             );
         }
       }
@@ -180,7 +180,7 @@ export class ModerationService {
         client: guild.client,
         guild,
         event: {
-          action: 'Member Baneado',
+          action: 'Member Banned',
           target: `${user.tag} (${user.id})`,
           executor: `${moderator.user.tag} (${moderator.id})`,
           reason,
@@ -193,7 +193,7 @@ export class ModerationService {
         }
       });
 
-      logger.info(`Usar banned: ${user.tag} by ${moderator.user.tag} in ${guild.name}`);
+      logger.info(`User banned: ${user.tag} by ${moderator.user.tag} in ${guild.name}`);
       
       return {
         caseId,
@@ -206,11 +206,11 @@ export class ModerationService {
     }
   }
 
-  static async kickUsar({
+  static async kickUser({
     guild,
     member,
     moderator,
-    reason = 'No se proporcionó un motivo'
+    reason = 'No reason provided'
   }) {
     try {
       if (!guild || !member || !moderator) {
@@ -250,7 +250,7 @@ export class ModerationService {
         }
       });
 
-      logger.info(`Usar kicked: ${member.user.tag} by ${moderator.user.tag} in ${guild.name}`);
+      logger.info(`User kicked: ${member.user.tag} by ${moderator.user.tag} in ${guild.name}`);
       
       return {
         caseId,
@@ -263,12 +263,12 @@ export class ModerationService {
     }
   }
 
-  static async timeoutUsar({
+  static async timeoutUser({
     guild,
     member,
     moderator,
     durationMs,
-    reason = 'No se proporcionó un motivo'
+    reason = 'No reason provided'
   }) {
     try {
       if (!guild || !member || !moderator || !durationMs) {
@@ -311,7 +311,7 @@ export class ModerationService {
         }
       });
 
-      logger.info(`Usar timed out: ${member.user.tag} by ${moderator.user.tag} in ${guild.name}`);
+      logger.info(`User timed out: ${member.user.tag} by ${moderator.user.tag} in ${guild.name}`);
       
       return {
         caseId,
@@ -325,7 +325,7 @@ export class ModerationService {
     }
   }
 
-  static async removeTimeoutUsar({
+  static async removeTimeoutUser({
     guild,
     member,
     moderator,
@@ -354,7 +354,7 @@ export class ModerationService {
 
       if (!member.isCommunicationDisabled()) {
         throw new TitanBotError(
-          'Usar not timed out',
+          'User not timed out',
           ErrorTypes.VALIDATION,
           `${member.user.tag} is not currently timed out`
         );
@@ -388,11 +388,11 @@ export class ModerationService {
     }
   }
 
-  static async unbanUsar({
+  static async unbanUser({
     guild,
     user,
     moderator,
-    reason = 'No se proporcionó un motivo'
+    reason = 'No reason provided'
   }) {
     try {
       if (!guild || !user || !moderator) {
@@ -408,7 +408,7 @@ export class ModerationService {
 
       if (!banInfo) {
         throw new TitanBotError(
-          'Usar not banned',
+          'User not banned',
           ErrorTypes.VALIDATION,
           `${user.tag} is not currently banned from this server`
         );
@@ -431,7 +431,7 @@ export class ModerationService {
         }
       });
 
-      logger.info(`Usar unbanned: ${user.tag} by ${moderator.user.tag} in ${guild.name}`);
+      logger.info(`User unbanned: ${user.tag} by ${moderator.user.tag} in ${guild.name}`);
       
       return {
         caseId,

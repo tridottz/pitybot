@@ -1,13 +1,13 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { joinVoiceChannel, replyMusicSuccess } from '../../services/musica/musicaActions.js';
-import { deferMusicCommand } from '../../services/musica/prefixSupport.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { joinVoiceChannel, replyMusicSuccess } from '../../services/music/musicActions.js';
+import { deferMusicCommand } from '../../services/music/prefixSupport.js';
 
 export default {
     category: 'Music',
     data: new SlashCommandBuilder()
-        .setName('entrar')
-        .setDescription('Entra a tu canal de voz without starting playback'),
+        .setName('join')
+        .setDescription('Entra a tu canal de voz sin iniciar la reproducción'),
 
     async execute(interaction, config, client) {
         const deferred = await deferMusicCommand(interaction);

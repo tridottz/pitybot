@@ -1,10 +1,10 @@
 import { EmbedBuilder } from 'discord.js';
-import { deleteBirthday } from '../../../services/cumpleanosService.js';
+import { deleteBirthday } from '../../../services/birthdayService.js';
 
-import { InteractionAyudaer } from '../../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../../utils/interactionHelper.js';
 export default {
     async execute(interaction, config, client) {
-        await InteractionAyudaer.safeDefer(interaction);
+        await InteractionHelper.safeDefer(interaction);
 
         const userId = interaction.user.id;
         const guildId = interaction.guildId;
@@ -16,7 +16,7 @@ export default {
                 .setColor(0xFF0000)
                 .setTitle('No se encontró cumpleaños')
                 .setDescription('No tienes ningún cumpleaños establecido para quitar.');
-            await InteractionAyudaer.safeEditReply(interaction, {
+            await InteractionHelper.safeEditReply(interaction, {
                 embeds: [embed]
             });
             return;
@@ -26,7 +26,7 @@ export default {
             .setColor(0x00FF00)
             .setTitle('Cumpleaños eliminado')
             .setDescription('Tu cumpleaños se eliminó correctamente del servidor.');
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [embed]
         });
     }

@@ -3,7 +3,7 @@ import { successEmbed } from '../../../utils/embeds.js';
 import ConfigService from '../../../services/config/configService.js';
 import { MessageFlags } from 'discord.js';
 import { logger } from '../../../utils/logger.js';
-import { ErrorTypes, replyUsarError } from '../../../utils/errorHandler.js';
+import { ErrorTypes, replyUserError } from '../../../utils/errorHandler.js';
 
 function extractId(value) {
     if (!value || typeof value !== 'string') return null;
@@ -29,7 +29,7 @@ function parseValue(key, rawValue) {
         }
         const id = extractId(value);
         if (!id) {
-            throw new Error('Please provide a valid mention or ID.');
+            throw new Error('Proporciona una mención o un ID válidos.');
         }
         return id;
     }
@@ -41,12 +41,12 @@ function parseValue(key, rawValue) {
         if (['no', 'false', 'disabled', 'disable'].includes(value.toLowerCase())) {
             return false;
         }
-        throw new Error('Please enter either yes or no.');
+        throw new Error('Escribe yes o no.');
     }
 
     if (key === 'prefix') {
         if (value.length < 1 || value.length > 10 || /\s/.test(value)) {
-            throw new Error('Prefix must be 1-10 characters with no spaces.');
+            throw new Error('El prefijo debe tener entre 1 y 10 caracteres y no incluir espacios.');
         }
         return value;
     }
@@ -58,7 +58,7 @@ function resolveModalValue(key, interaction) {
     if (key === 'logChannelId') {
         const channelId = interaction.fields.getField('log_channel')?.values?.[0];
         if (!channelId) {
-            throw new Error('Please select a log channel.');
+            throw new Error('Selecciona un canal de registros.');
         }
         return channelId;
     }
@@ -66,7 +66,7 @@ function resolveModalValue(key, interaction) {
     if (key === 'modRole') {
         const roleId = interaction.fields.getField('mod_role')?.values?.[0];
         if (!roleId) {
-            throw new Error('Please select a moderator role.');
+            throw new Error('Selecciona un rol de moderación.');
         }
         return roleId;
     }
@@ -78,15 +78,15 @@ function resolveModalValue(key, interaction) {
 function buildSuccessMessage(key, value, guild) {
     if (key === 'logChannelId') {
         const channel = guild?.channels?.cache?.get(value);
-        return `Log channel set to ${channel ?? `<#${value}>`}.`;
+        return `El canal de registros se estableció en ${channel ?? `<#${value}>`}.`;
     }
 
     if (key === 'modRole') {
         const role = guild?.roles?.cache?.get(value);
-        return `Moderator role set to ${role ?? `<@&${value}>`}.`;
+        return `El rol de moderación se estableció en ${role ?? `<@&${value}>`}.`;
     }
 
-    return `The setting \`${key}\` has been updated successfully.`;
+    return `El ajuste \`${key}\` se actualizó correctamente.`;
 }
 
 export default {
@@ -99,12 +99,12 @@ export default {
             await ConfigService.updateSetting(interaction.client, guildId, key, value, interaction.user.id);
 
             await interaction.reply({
-                embeds: [successEmbed('Configuration Updated', buildSuccessMessage(key, value, interaction.guild))],
+                embeds: [successEmbed('Configuración actualizada', buildSuccessMessage(key, value, interaction.guild))],
                 flags: MessageFlags.Ephemeral,
             });
         } catch (error) {
             logger.error('Config modal handler error:', error);
-            await replyUsarError(interaction, { type: ErrorTypes.CONFIGURATION, message: error.message || 'Please try again.' });
+            await replyUserError(interaction, { type: ErrorTypes.CONFIGURATION, message: error.message || 'Inténtalo de nuevo.' });
         }
     },
 };

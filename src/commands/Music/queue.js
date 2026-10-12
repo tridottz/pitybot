@@ -1,22 +1,22 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { buildQueueReply } from '../../services/musica/musicaActions.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { buildQueueReply } from '../../services/music/musicActions.js';
 
 export default {
     slashOnly: true,
     category: 'Music',
     data: new SlashCommandBuilder()
-        .setName('cola')
-        .setDescription('Show the current music queue')
+        .setName('queue')
+        .setDescription('Muestra la cola de reproducción actual')
         .addIntegerOption((opt) =>
-            opt.setName('page').setDescription('Page number').setMinValue(1),
+            opt.setName('page').setDescription('Número de página').setMinValue(1),
         ),
 
     async execute(interaction, config, client) {
-        await InteractionAyudaer.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+        await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
         const page = (interaction.options.getInteger('page') || 1) - 1;
         const payload = buildQueueReply(client, interaction.guild.id, page);
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: payload.embeds,
             components: payload.components,
         });

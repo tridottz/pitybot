@@ -1,4 +1,4 @@
-// interactionAyudaer.js
+// interactionHelper.js
 
 import { logger } from './logger.js';
 import { MessageFlags } from 'discord.js';
@@ -26,7 +26,7 @@ function sanitizeEditReplyOptions(options = {}) {
     return rest;
 }
 
-export class InteractionAyudaer {
+export class InteractionHelper {
     static getCoordinator(interaction) {
         return interaction?._responseCoordinator || null;
     }
@@ -45,7 +45,7 @@ export class InteractionAyudaer {
         }
 
         interaction.reply = async (options) => {
-            const coordinator = InteractionAyudaer.getCoordinator(interaction);
+            const coordinator = InteractionHelper.getCoordinator(interaction);
             if (coordinator?.isUsageFinalized()) {
                 return coordinator.getReplyMessage();
             }
@@ -308,7 +308,7 @@ export class InteractionAyudaer {
                 ? createError(error.message || 'Command failed', ErrorTypes.UNKNOWN, errorEmbed, { expected: true })
                 : error;
 
-            await handleInteractionError(interaction, errorToHandle, { source: 'interactionAyudaer.safeExecute' });
+            await handleInteractionError(interaction, errorToHandle, { source: 'interactionHelper.safeExecute' });
         }
     }
 
@@ -342,7 +342,7 @@ export function withSafeExecuteDecorator(target, propertyName, descriptor) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function(interaction, config, client) {
-        await InteractionAyudaer.safeExecute(
+        await InteractionHelper.safeExecute(
             interaction,
             () => originalMethod.call(this, interaction, config, client),
             null,

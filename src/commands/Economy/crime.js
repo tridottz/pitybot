@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
-import { getEconomyData, setEconomyData } from '../../utils/economia.js';
+import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 const CRIME_COOLDOWN = 60 * 60 * 1000;
 const JAIL_TIME = 2 * 60 * 60 * 1000;
@@ -18,24 +18,24 @@ const CRIME_TYPES = [
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('delito')
+        .setName('crime')
         .setDescription('Comete un delito para ganar dinero (arriesgado)')
         .addStringOption(option =>
             option
                 .setName('type')
-                .setDescription('El tipo de delito que quieres cometer')
+                .setDescription('Tipo de delito que quieres cometer')
                 .setRequired(true)
                 .addChoices(
-                    { name: 'Pickpocketing', value: 'pickpocketing' },
-                    { name: 'Burglary', value: 'burglary' },
-                    { name: 'Bank Heist', value: 'bank-heist' },
-                    { name: 'Art Theft', value: 'art-theft' },
-                    { name: 'Cybercrime', value: 'cybercrime' },
+                    { name: 'Carterismo', value: 'pickpocketing' },
+                    { name: 'Robo a casa', value: 'burglary' },
+                    { name: 'Robo a banco', value: 'bank-heist' },
+                    { name: 'Robo de arte', value: 'art-theft' },
+                    { name: 'Delito cibernético', value: 'cybercrime' },
                 )
         ),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        await InteractionAyudaer.safeDefer(interaction);
+        await InteractionHelper.safeDefer(interaction);
             
             const userId = interaction.user.id;
             const guildId = interaction.guildId;
@@ -48,7 +48,7 @@ export default {
             if (isJailed) {
                 const timeLeft = Math.ceil((userData.jailedUntil - now) / (1000 * 60));
                 throw createError(
-                    "Usar is in jail",
+                    "User is in jail",
                     ErrorTypes.RATE_LIMIT,
                     `You're in jail for ${timeLeft} more minutes!`,
                     { jailTimeRemaining: userData.jailedUntil - now }
@@ -60,7 +60,7 @@ export default {
                 throw createError(
                     "Crime cooldown active",
                     ErrorTypes.RATE_LIMIT,
-                    `You need to wait ${timeLeft} more minutes before committing another crime.`,
+                    `Debes esperar ${timeLeft} minutos más antes de cometer otro delito.`,
                     { remaining: lastCrime + CRIME_COOLDOWN - now, cooldownType: 'crime' }
                 );
             }
@@ -74,7 +74,7 @@ export default {
                 throw createError(
                     "Invalid crime type",
                     ErrorTypes.VALIDATION,
-                    "Please select a valid crime type.",
+                    "Selecciona un tipo de delito válido.",
                     { crimeType }
                 );
             }
@@ -93,11 +93,11 @@ export default {
                 await setEconomyData(client, guildId, userId, userData);
                 
                 const embed = successEmbed(
-                    "🕵️ Crime Successful!",
-                    `You successfully committed ${crime.name} and earned **${amountEarned}** coins!`
+                    "🕵️ ¡Delito exitoso!",
+                    `Cometiste ${crime.name} y ganaste **${amountEarned}** monedas.`
                 );
                 
-                await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+                await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
             } else {
                 // Fine is based on the potential haul of the attempted crime
                 const potentialHaul = Math.floor((crime.min + crime.max) / 2);
@@ -108,12 +108,12 @@ export default {
                 await setEconomyData(client, guildId, userId, userData);
                 
                 const embed = warningEmbed(
-                    "🚔 Crime Failed!",
-                    `You were caught while attempting ${crime.name} and have been sent to jail! ` +
-                    `You were fined ${fine.toLocaleString()} coins and will be in jail for 2 hours.`
+                    "🚔 ¡Delito fallido!",
+                    `Te atraparon al intentar ${crime.name} y te enviaron a la cárcel. ` +
+                    `Recibiste una multa de ${fine.toLocaleString()} monedas y estarás en la cárcel durante 2 horas.`
                 );
                 
-                await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+                await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
             }
     }, { command: 'crime' })
 };

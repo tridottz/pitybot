@@ -4,16 +4,16 @@ import { logEvent } from '../../utils/moderation.js';
 import { logger } from '../../utils/logger.js';
 import { getColor } from '../../config/bot.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
     data: new SlashCommandBuilder()
-    .setName("limpiar")
-    .setDescription("Delete a specific amount of messages")
+    .setName("purge")
+    .setDescription("Elimina una cantidad específica de mensajes")
     .addIntegerOption((option) =>
       option
         .setName("amount")
-        .setDescription("Number of messages (1-100)")
+        .setDescription("Número de mensajes (1-100)")
         .setRequired(true),
     )
 .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
@@ -21,7 +21,7 @@ export default {
   abuseProtection: { maxAttempts: 5, windowMs: 60_000 },
 
   async execute(interaction, config, client) {
-    const deferSuccess = await InteractionAyudaer.safeDefer(interaction, {
+    const deferSuccess = await InteractionHelper.safeDefer(interaction, {
       flags: MessageFlags.Ephemeral,
     });
     if (!deferSuccess) {
@@ -37,7 +37,7 @@ export default {
     const channel = interaction.channel;
 
     if (amount < 1 || amount > 100)
-      return await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please specify a number between 1 and 100.' });
+      return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Indica un número entre 1 y 100.' });
 
     try {
       const fetched = await channel.messages.fetch({ limit: amount });
@@ -61,7 +61,7 @@ export default {
         }
       });
 
-      await InteractionAyudaer.safeEditReply(interaction, {
+      await InteractionHelper.safeEditReply(interaction, {
         embeds: [
           successEmbed(
             "Messages Purged",
@@ -78,7 +78,7 @@ export default {
       }, 3000);
     } catch (error) {
       logger.error('Purge command error:', error);
-      await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An unexpected error occurred during message deletion. Note: Messages older than 14 days cannot be bulk deleted.' });
+      await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error inesperado al eliminar los mensajes. Ten en cuenta que no se pueden eliminar en bloque los mensajes de más de 14 días.' });
     }
   }
 };

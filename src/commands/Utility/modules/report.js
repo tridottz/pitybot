@@ -1,20 +1,20 @@
 import { createEmbed } from '../../../utils/embeds.js';
 import { getGuildConfig } from '../../../services/config/guildConfig.js';
-import { logEvent, EVENT_TYPES, resolveLogChannel } from '../../../services/registrosService.js';
-import { formatLogLine, resolveUsarAuthor } from '../../../utils/registros/logEmbeds.js';
-import { InteractionAyudaer } from '../../../utils/interactionAyudaer.js';
-import { replyUsarError, ErrorTypes } from '../../../utils/errorHandler.js';
+import { logEvent, EVENT_TYPES, resolveLogChannel } from '../../../services/loggingService.js';
+import { formatLogLine, resolveUserAuthor } from '../../../utils/logging/logEmbeds.js';
+import { InteractionHelper } from '../../../utils/interactionHelper.js';
+import { replyUserError, ErrorTypes } from '../../../utils/errorHandler.js';
 import { logger } from '../../../utils/logger.js';
 
 export default {
     async execute(interaction, config, client) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction, { ephemeral: true });
+        const deferSuccess = await InteractionHelper.safeDefer(interaction, { ephemeral: true });
         if (!deferSuccess) {
             logger.warn('Report interaction defer failed', { userId: interaction.user.id, guildId: interaction.guildId });
             return;
         }
 
-        const targetUsar = interaction.options.getUsar('user');
+        const targetUser = interaction.options.getUser('user');
         const reason = interaction.options.getString('reason');
         const guildId = interaction.guildId;
 
@@ -22,7 +22,7 @@ export default {
         const reportChannelId = resolveLogChannel(guildConfig, 'reports');
 
         if (!reportChannelId) {
-            return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'The report channel has not been set up. Ask a moderator to use `/registros dashboard` or `/registros channel`.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'El canal de reportes no está configurado. Pídele a un moderador que use `/logging dashboard` o `/logging channel`.' });
         }
 
         const ownerMention = interaction.guild.ownerId
@@ -35,28 +35,28 @@ export default {
             eventType: EVENT_TYPES.REPORT_FILE,
             content: ownerMention,
             data: {
-                title: 'Usar Report',
+                title: 'Reporte de usuario',
                 lines: [
-                    formatLogLine('Reported Usar', `${targetUsar.tag} (\`${targetUsar.id}\`)`),
+                    formatLogLine('Reported User', `${targetUser.tag} (\`${targetUser.id}\`)`),
                     formatLogLine('Reported By', `${interaction.user.tag} (\`${interaction.user.id}\`)`),
                     formatLogLine('Channel', interaction.channel.toString()),
                 ],
-                blockFields: [{ name: 'Reason', value: reason }],
-                author: await resolveUsarAuthor(client, targetUsar.id),
-                thumbnail: targetUsar.displayAvatarURL(),
+                blockFields: [{ name: 'Motivo', value: reason }],
+                author: await resolveUserAuthor(client, targetUser.id),
+                thumbnail: targetUser.displayAvatarURL(),
             },
         });
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [createEmbed({
-                title: 'Report Submitted',
-                description: `Your report against **${targetUsar.tag}** has been successfully filed and sent to the moderation team. Thank you!`,
+                title: 'Reporte enviado',
+                description: `Tu reporte sobre **${targetUser.tag}** se envió correctamente al equipo de moderación. ¡Gracias!`,
             })],
         });
 
         logger.info('Report submitted', {
             userId: interaction.user.id,
-            reportedUsarId: targetUsar.id,
+            reportedUserId: targetUser.id,
             guildId,
             reasonLength: reason.length,
         });

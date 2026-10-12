@@ -8,9 +8,9 @@ import {
   isMaintenanceMode,
 } from '../config/bot.js';
 import botConfig from '../config/bot.js';
-import { handleApplicationModal } from '../comandos/Community/solicitar.js';
+import { handleApplicationModal } from '../commands/Community/apply.js';
 import { handleInteractionError, createError, ErrorTypes, ErrorCodes } from '../utils/errorHandler.js';
-import { InteractionAyudaer } from '../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../utils/interactionHelper.js';
 import { createInteractionTraceContext, runWithTraceContext } from '../utils/logger.js';
 import { validateChatInputPayloadOrThrow } from '../utils/commandInputValidation.js';
 import { enforceAbuseProtection, formatCooldownDuration } from '../utils/abuseProtection.js';
@@ -55,7 +55,7 @@ export default {
 
     return runWithTraceContext(interactionTraceContext, async () => {
       try {
-        InteractionAyudaer.patchInteractionResponses(interaction);
+        InteractionHelper.patchInteractionResponses(interaction);
         ResponseCoordinator.attach(interaction);
 
         if (interaction.isChatInputCommand()) {
@@ -126,7 +126,7 @@ export default {
               throw createError(
                 `Risky command cooldown active for ${interaction.commandName}`,
                 ErrorTypes.RATE_LIMIT,
-                `This command is on cooldown. Please wait ${formattedCooldown} before trying again.`,
+                `Este comando está en espera. Aguarda ${formattedCooldown} antes de volver a intentarlo.`,
                 withTraceContext({
                   commandName: interaction.commandName,
                   subtype: 'command_cooldown',
@@ -146,7 +146,7 @@ export default {
                 throw createError(
                   `Command ${accessKey} is disabled in this guild`,
                   ErrorTypes.CONFIGURATION,
-                  'This command has been disabled for this server.',
+                  'Este comando está desactivado en este servidor.',
                   withTraceContext({ commandName: accessKey, guildId: interaction.guild.id }, interactionTraceContext)
                 );
               }
@@ -186,7 +186,7 @@ export default {
 
           const focusedOption = interaction.options.getFocused(true);
           
-          if (interaction.commandName === 'solicitar' && focusedOption.name === 'application') {
+          if (interaction.commandName === 'apply' && focusedOption.name === 'application') {
             try {
               const { getApplicationRoles } = await import('../utils/database.js');
               const roles = await getApplicationRoles(client, interaction.guildId);
@@ -211,7 +211,7 @@ export default {
               });
               await interaction.respond([]);
             }
-          } else if (interaction.commandName === 'admin-app' && focusedOption.name === 'application') {
+          } else if (interaction.commandName === 'app-admin' && focusedOption.name === 'application') {
             try {
               const { getApplicationRoles } = await import('../utils/database.js');
               const roles = await getApplicationRoles(client, interaction.guildId);
@@ -235,7 +235,7 @@ export default {
               });
               await interaction.respond([]);
             }
-          } else if (interaction.commandName === 'roles-reaccion' && focusedOption.name === 'panel') {
+          } else if (interaction.commandName === 'reactroles' && focusedOption.name === 'panel') {
             try {
               const { getAllReactionRoleMessages, deleteReactionRoleMessage } = await import('../services/reactionRoleService.js');
               const guildId = interaction.guildId;
@@ -327,7 +327,7 @@ export default {
               throw createError(
                 `No button handler found for ${buttonType}`,
                 ErrorTypes.CONFIGURATION,
-                'This button is not available.',
+                'Este botón no está disponible.',
                 withTraceContext({ buttonType }, interactionTraceContext)
               );
             }
@@ -345,7 +345,7 @@ export default {
             throw createError(
               `No button handler found for ${customId}`,
               ErrorTypes.CONFIGURATION,
-              'This button is not available.',
+              'Este botón no está disponible.',
               withTraceContext({ customId }, interactionTraceContext)
             );
           }
@@ -371,7 +371,7 @@ export default {
             throw createError(
               `No select menu handler found for ${customId}`,
               ErrorTypes.CONFIGURATION,
-              'This select menu is not available.',
+              'Este menú de selección no está disponible.',
               withTraceContext({ customId }, interactionTraceContext)
             );
           }
@@ -424,7 +424,7 @@ export default {
             throw createError(
               `No modal handler found for ${customId}`,
               ErrorTypes.CONFIGURATION,
-              'This form is not available.',
+              'Este formulario no está disponible.',
               withTraceContext({ customId }, interactionTraceContext)
             );
           }

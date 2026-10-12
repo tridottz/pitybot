@@ -3,22 +3,22 @@ import { successEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
-    .setName("dado")
-    .setDescription("Lanza dados con la notación estándar (por ejemplo, 2d20, 1d6 + 5).")
+    .setName("roll")
+    .setDescription("Lanza dados con la notación habitual (por ejemplo, 2d20 o 1d6 + 5).")
     .addStringOption((option) =>
       option
         .setName("notation")
-        .setDescription("La notación de los dados (por ejemplo, 2d6, 1d20 + 4)")
+        .setDescription("Notación de los dados (por ejemplo, 2d6 o 1d20 + 4)")
         .setRequired(true)
         .setMaxLength(50),
     ),
   category: 'Fun',
 
   async execute(interaction, config, client) {
-    await InteractionAyudaer.safeDefer(interaction);
+    await InteractionHelper.safeDefer(interaction);
 
     const notation = interaction.options
       .getString("notation")
@@ -31,7 +31,7 @@ export default {
       throw new TitanBotError(
         `Invalid dice notation: ${notation}`,
         ErrorTypes.USER_INPUT,
-        'Invalid notation. Usa format like `1d20` or `3d6+5`.'
+        'La notación no es válida. Usa un formato como `1d20` o `3d6+5`.'
       );
     }
 
@@ -43,7 +43,7 @@ export default {
       throw new TitanBotError(
         `Too many dice requested: ${numDice}`,
         ErrorTypes.VALIDATION,
-        'Please keep the number of dice between 1 and 20.'
+        'Usa entre 1 y 20 dados.'
       );
     }
 
@@ -51,7 +51,7 @@ export default {
       throw new TitanBotError(
         `Invalid number of sides: ${numSides}`,
         ErrorTypes.VALIDATION,
-        'Please keep the number of sides between 1 and 1000.'
+        'Usa dados con entre 1 y 1000 caras.'
       );
     }
 
@@ -67,15 +67,15 @@ export default {
     const finalTotal = totalRoll + modifier;
 
     const resultsDetail =
-      numDice > 1 ? `**Rolls:** ${rolls.join(" + ")}\n` : "";
+      numDice > 1 ? `**Tiradas:** ${rolls.join(" + ")}\n` : "";
     const modifierText = modifier !== 0 ? `+ (${modifier})` : "";
 
     const embed = successEmbed(
-      `🎲 Rolling ${numDice}d${numSides}${modifier !== 0 ? match[3] : ""}`,
-      `${resultsDetail}**Total Roll:** ${totalRoll}${modifierText} = **${finalTotal}**`,
+      `🎲 Tirada de ${numDice}d${numSides}${modifier !== 0 ? match[3] : ""}`,
+      `${resultsDetail}**Total de las tiradas:** ${totalRoll}${modifierText} = **${finalTotal}**`,
     );
 
-    await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+    await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
     logger.debug(`Roll command executed by user ${interaction.user.id} with notation ${notation} in guild ${interaction.guildId}`);
   },
 };

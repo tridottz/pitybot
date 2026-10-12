@@ -1,15 +1,15 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
     data: new SlashCommandBuilder()
-    .setName("info-servidor")
-    .setDescription("Muestra información detallada del servidor"),
+    .setName("serverinfo")
+    .setDescription("Obtén información detallada del servidor"),
 
   async execute(interaction) {
-    const deferSuccess = await InteractionAyudaer.safeDefer(interaction);
+    const deferSuccess = await InteractionHelper.safeDefer(interaction);
     if (!deferSuccess) {
       logger.warn(`ServerInfo interaction defer failed`, {
         userId: interaction.user.id,
@@ -24,10 +24,10 @@ export default {
 
     const createdTimestamp = Math.floor(guild.createdAt.getTime() / 1000);
 
-    const embed = createEmbed({ title: `Server Info: ${guild.name}`, description: `Server ID: ${guild.id}` })
+    const embed = createEmbed({ title: `Información del servidor: ${guild.name}`, description: `ID del servidor: ${guild.id}` })
       .setThumbnail(guild.iconURL({ size: 256 }))
       .addFields(
-        { name: "Owner", value: owner.user.tag, inline: true },
+        { name: "Propietario", value: owner.user.tag, inline: true },
         { name: "Members", value: `${guild.memberCount}`, inline: true },
         {
           name: "Channels",
@@ -47,7 +47,7 @@ export default {
         },
       );
 
-    await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+    await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
     logger.info(`ServerInfo command executed`, {
       userId: interaction.user.id,
       guildId: guild.id,

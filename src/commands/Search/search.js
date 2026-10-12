@@ -1,39 +1,39 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 
-import searchDefine from './modules/buscar_define.js';
-import searchGoogle from './modules/buscar_google.js';
-import searchUrban from './modules/buscar_urban.js';
+import searchDefine from './modules/search_define.js';
+import searchGoogle from './modules/search_google.js';
+import searchUrban from './modules/search_urban.js';
 
 export default {
     data: new SlashCommandBuilder()
         .setName('buscar')
-        .setDescription('Search the web and dictionaries')
+        .setDescription('Busca en la web y en diccionarios')
         .addSubcommand(subcommand =>
             subcommand
-                .setName('define')
-                .setDescription('Look up a word definition')
+                .setName('definir')
+                .setDescription('Busca la definición de una palabra')
                 .addStringOption(option =>
-                    option.setName('word')
-                        .setDescription('The word to look up')
+                    option.setName('palabra')
+                        .setDescription('Palabra cuya definición quieres consultar')
                         .setRequired(true))
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName('google')
-                .setDescription('Search Google')
+                .setDescription('Busca en Google')
                 .addStringOption(option =>
-                    option.setName('query')
-                        .setDescription('What would you like to search for?')
+                    option.setName('busqueda')
+                        .setDescription('¿Qué quieres buscar?')
                         .setRequired(true))
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName('urban')
-                .setDescription('Search Urban Dictionary for definitions')
+                .setDescription('Busca definiciones en Urban Dictionary')
                 .addStringOption(option =>
-                    option.setName('term')
-                        .setDescription('The term to look up on Urban Dictionary')
+                    option.setName('termino')
+                        .setDescription('Término que quieres buscar en Urban Dictionary')
                         .setRequired(true))
         ),
 
@@ -41,14 +41,14 @@ export default {
         const subcommand = interaction.options.getSubcommand();
 
         switch (subcommand) {
-            case 'define':
+            case 'definir':
                 return await searchDefine.execute(interaction, config, client);
             case 'google':
                 return await searchGoogle.execute(interaction, config, client);
             case 'urban':
                 return await searchUrban.execute(interaction, config, client);
             default:
-                return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Unknown subcommand' });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Subcomando desconocido' });
         }
     }
 };

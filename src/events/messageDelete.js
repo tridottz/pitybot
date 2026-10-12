@@ -1,8 +1,8 @@
 import { Events } from 'discord.js';
-import { logEvent, EVENT_TYPES } from '../services/registrosService.js';
+import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
 import { logger } from '../utils/logger.js';
 import { getReactionRoleMessage, deleteReactionRoleMessage } from '../services/reactionRoleService.js';
-import { formatLogLine } from '../utils/registros/logEmbeds.js';
+import { formatLogLine } from '../utils/logging/logEmbeds.js';
 
 const MAX_LOGGED_MESSAGE_CONTENT_LENGTH = 1024;
 
@@ -26,7 +26,7 @@ export default {
               guildId: message.guild.id,
               eventType: EVENT_TYPES.REACTION_ROLE_DELETE,
               data: {
-                title: 'Reaction Role Removed',
+                title: 'Rol por reacción eliminado',
                 lines: [
                   formatLogLine('Channel', message.channel ? `${message.channel.name} ${message.channel.toString()}` : 'Unknown'),
                   formatLogLine('Message ID', `\`${message.id}\``),
@@ -68,10 +68,10 @@ export default {
         guildId: message.guild.id,
         eventType: EVENT_TYPES.MESSAGE_DELETE,
         data: {
-          title: 'Message deleted',
+          title: 'Mensaje eliminado',
           lines: metaLines,
           quoted: true,
-          section: messageBody ? { title: 'Message', body: messageBody || '*(empty message)*' } : null,
+          section: messageBody ? { title: 'Mensaje', body: messageBody || '*(mensaje vacío)*' } : null,
           userId: message.author?.id,
           channelId: message.channel.id,
         }

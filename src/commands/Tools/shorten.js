@@ -1,18 +1,18 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 import { getColor } from '../../config/bot.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("acortar-enlace")
-        .setDescription("Acorta una URL usando is.gd")
+        .setName("shorten")
+        .setDescription("Acorta una URL con is.gd")
         .addStringOption(option =>
             option
                 .setName("url")
-                .setDescription("La URL que quieres acortar")
+                .setDescription("URL que quieres acortar")
                 .setRequired(true)
         )
         .addStringOption(option =>
@@ -25,7 +25,7 @@ export default {
     category: "Tools",
 
     async execute(interaction) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction, {
+        const deferSuccess = await InteractionHelper.safeDefer(interaction, {
             flags: MessageFlags.Ephemeral
         });
         if (!deferSuccess) {
@@ -43,14 +43,14 @@ export default {
         try {
             new URL(url);
         } catch (e) {
-            return replyUsarError(interaction, {
+            return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: 'Invalid URL format. Include http:// or https://',
+                message: 'El formato del enlace no es válido. Incluye http:// o https://',
             });
         }
 
         if (custom && !/^[a-zA-Z0-9_-]+$/.test(custom)) {
-            return replyUsarError(interaction, {
+            return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
                 message: 'Custom URL can only contain letters, numbers, underscores, and hyphens.',
             });
@@ -69,14 +69,14 @@ export default {
             response = await fetch(apiUrl, {
                 signal: controller.signal,
                 headers: {
-                    'Usar-Agent': 'TitanBot URL Shortener/1.0'
+                    'User-Agent': 'TitanBot URL Shortener/1.0'
                 }
             });
         } catch (networkError) {
             const message = networkError?.name === 'AbortError'
-                ? 'The URL shortener timed out. Please try again in a moment.'
-                : 'Unable to reach the URL shortener service right now. Please try again later.';
-            return replyUsarError(interaction, {
+                ? 'El acortador de enlaces tardó demasiado. Inténtalo de nuevo en un momento.'
+                : 'No se pudo acceder al servicio para acortar enlaces. Inténtalo más tarde.';
+            return replyUserError(interaction, {
                 type: ErrorTypes.NETWORK,
                 message,
             });
@@ -85,9 +85,9 @@ export default {
         }
 
         if (!response.ok) {
-            return replyUsarError(interaction, {
+            return replyUserError(interaction, {
                 type: ErrorTypes.UNKNOWN,
-                message: `Shortener service returned HTTP ${response.status}. Please try again later.`,
+                    message: `El servicio de enlaces cortos respondió con HTTP ${response.status}. Inténtalo de nuevo más tarde.`,
             });
         }
 
@@ -97,25 +97,25 @@ export default {
             new URL(shortUrl);
         } catch (e) {
             if (shortUrl.includes("already exists")) {
-                return replyUsarError(interaction, {
+                return replyUserError(interaction, {
                     type: ErrorTypes.VALIDATION,
-                    message: 'That custom URL is already taken. Try a different one.',
+                    message: 'Ese enlace personalizado ya está en uso. Prueba con otro.',
                 });
             } else if (shortUrl.includes("invalid")) {
-                return replyUsarError(interaction, {
+                return replyUserError(interaction, {
                     type: ErrorTypes.VALIDATION,
-                    message: 'Invalid URL. Include http:// or https://',
+                    message: 'El enlace no es válido. Incluye http:// o https://',
                 });
             }
-            return replyUsarError(interaction, {
+            return replyUserError(interaction, {
                 type: ErrorTypes.UNKNOWN,
-                message: `URL shortening failed: ${shortUrl}`,
+                message: `No se pudo acortar el enlace: ${shortUrl}`,
             });
         }
 
-        const embed = successEmbed('URL Shortened', `Here's your shortened URL: ${shortUrl}`);
+        const embed = successEmbed('Enlace acortado', `Este es tu enlace corto: ${shortUrl}`);
         embed.setColor(getColor('success'));
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [embed],
         });
     },

@@ -2,15 +2,15 @@ import { SlashCommandBuilder, version, MessageFlags } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
-    .setName("estadisticas")
-    .setDescription("Muestra las estadísticas del bot"),
+    .setName("stats")
+    .setDescription("Consulta las estadísticas del bot"),
 
   async execute(interaction) {
     try {
-      await InteractionAyudaer.safeDefer(interaction);
+      await InteractionHelper.safeDefer(interaction);
       
       const totalGuilds = interaction.client.guilds.cache.size;
       const totalMembers = interaction.client.guilds.cache.reduce(
@@ -19,23 +19,23 @@ export default {
       );
       const nodeVersion = process.version;
 
-      const embed = createEmbed({ title: "System Statistics", description: "Real-time performance metrics." }).addFields(
-        { name: "Servers", value: `${totalGuilds}`, inline: true },
-        { name: "Usars", value: `${totalMembers}`, inline: true },
+      const embed = createEmbed({ title: "Estadísticas del sistema", description: "Métricas de rendimiento en tiempo real." }).addFields(
+        { name: "Servidores", value: `${totalGuilds}`, inline: true },
+        { name: "Usuarios", value: `${totalMembers}`, inline: true },
         { name: "Node.js", value: `${nodeVersion}`, inline: true },
         { name: "Discord.js", value: `v${version}`, inline: true },
         {
-          name: "Memory Usage",
-          value: `${(process.memoryUsage().heapUsad / 1024 / 1024).toFixed(2)} MB`,
+          name: "Uso de memoria",
+          value: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`,
           inline: true,
         },
       );
 
-      await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+      await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
     } catch (error) {
       logger.error('Stats command error:', error);
-      return InteractionAyudaer.safeEditReply(interaction, {
-        embeds: [createEmbed({ title: 'System Error', description: 'Could not fetch system statistics.', color: 'error' })],
+      return InteractionHelper.safeEditReply(interaction, {
+        embeds: [createEmbed({ title: 'Error del sistema', description: 'No se pudieron obtener las estadísticas del sistema.', color: 'error' })],
         flags: MessageFlags.Ephemeral,
       });
     }

@@ -3,10 +3,10 @@ import {
   PermissionFlagsBits,
   MessageFlags,
 } from 'discord.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { successEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 import {
   disableCategory,
   enableCategory,
@@ -21,7 +21,7 @@ import {
   handleDashboardComponent,
   createDashboardCollectorFilter,
   isCommandAccessCustomId,
-} from './modules/comandos_dashboard.js';
+} from './modules/commands_dashboard.js';
 
 const DASHBOARD_TIMEOUT_MS = 10 * 60 * 1000;
 
@@ -38,7 +38,7 @@ function buildCategoryChoices(client) {
 
 async function ensureManageGuild(interaction) {
   if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-    await replyUsarError(interaction, { type: ErrorTypes.PERMISSION, message: 'Necesitas el permiso de **Administrar servidor** para gestionar los comandos.' });
+    await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Necesitas el permiso de **Administrar servidor** para gestionar los comandos.' });
     return false;
   }
 
@@ -47,7 +47,7 @@ async function ensureManageGuild(interaction) {
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('comandos')
+    .setName('commands')
     .setDescription('Activa o desactiva comandos y categorías del bot en este servidor')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setDMPermission(false)
@@ -161,13 +161,13 @@ export default {
     const subcommand = interaction.options.getSubcommand();
 
     if (subcommand === 'dashboard') {
-      const deferred = await InteractionAyudaer.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+      const deferred = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
       if (!deferred) {
         return;
       }
 
       const view = await buildDashboardView(client, interaction.guildId, interaction.guild, 'overview');
-      await InteractionAyudaer.safeEditReply(interaction, {
+      await InteractionHelper.safeEditReply(interaction, {
         embeds: [view.embed],
         components: view.components,
       });
@@ -194,7 +194,7 @@ export default {
             customId: componentInteraction.customId,
             guildId: interaction.guildId,
           });
-          await replyUsarError(componentInteraction, {
+          await replyUserError(componentInteraction, {
             type: ErrorTypes.UNKNOWN,
             message: error.message || 'No se pudo actualizar el acceso a comandos.',
           }).catch(() => {});
@@ -219,7 +219,7 @@ export default {
     const target = interaction.options.getString('objetivo');
     const isDisable = subcommand === 'desactivar';
 
-    const deferred = await InteractionAyudaer.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+    const deferred = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
     if (!deferred) {
       return;
     }
@@ -227,12 +227,12 @@ export default {
     if (scope === 'category') {
       const category = resolveCategoryChoice(client, target);
       if (!category) {
-        return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: `Ninguna categoría coincide con \`${target}\`. Usa \`/comandos dashboard\` para ver las categorías.` });
+        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Ninguna categoría coincide con \`${target}\`. Usa \`/commands dashboard\` para ver las categorías.` });
       }
 
       if (isDisable) {
         await disableCategory(client, interaction.guildId, category.key);
-        return InteractionAyudaer.safeEditReply(interaction, {
+        return InteractionHelper.safeEditReply(interaction, {
           embeds: [
             successEmbed(
               'Categoría desactivada',
@@ -243,7 +243,7 @@ export default {
       }
 
       await enableCategory(client, interaction.guildId, category.key);
-      return InteractionAyudaer.safeEditReply(interaction, {
+      return InteractionHelper.safeEditReply(interaction, {
         embeds: [successEmbed('Categoría activada', `Los comandos de **${category.displayName}** están activados (excepto los desactivados individualmente).`)],
       });
     }
@@ -251,13 +251,13 @@ export default {
     const commandName = target.toLowerCase();
     if (isDisable) {
       await disableCommand(client, interaction.guildId, commandName);
-      return InteractionAyudaer.safeEditReply(interaction, {
+      return InteractionHelper.safeEditReply(interaction, {
         embeds: [successEmbed('Comando desactivado', `\`/${commandName}\` ahora está desactivado en este servidor.`)],
       });
     }
 
     await enableCommand(client, interaction.guildId, commandName);
-    return InteractionAyudaer.safeEditReply(interaction, {
+    return InteractionHelper.safeEditReply(interaction, {
       embeds: [successEmbed('Comando activado', `\`/${commandName}\` ahora está activado en este servidor.`)],
     });
   },

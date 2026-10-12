@@ -1,17 +1,17 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { buildNowPlayingReply } from '../../services/musica/musicaActions.js';
-import { deferMusicCommand } from '../../services/musica/prefixSupport.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { buildNowPlayingReply } from '../../services/music/musicActions.js';
+import { deferMusicCommand } from '../../services/music/prefixSupport.js';
 
 export default {
     category: 'Music',
     data: new SlashCommandBuilder()
-        .setName('sonando')
-        .setDescription('Show the currently playing track'),
+        .setName('nowplaying')
+        .setDescription('Muestra la canción que está sonando'),
 
     async execute(interaction, config, client) {
         await deferMusicCommand(interaction);
         const payload = buildNowPlayingReply(client, interaction.guild.id);
-        await InteractionAyudaer.safeEditReply(interaction, payload);
+        await InteractionHelper.safeEditReply(interaction, payload);
     },
 };

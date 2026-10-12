@@ -4,7 +4,7 @@
  *
  * NOTE: This also runs automatically on bot startup (see runStartupKeyMigration
  * in src/utils/postgresDatabase.js), which is the recommended path for hosts
- * like Railway where one-off scripts are inconvenient. Usa this script only for
+ * like Railway where one-off scripts are inconvenient. Use this script only for
  * a dry-run preview or to force a re-run.
  *
  * Usage:
@@ -23,7 +23,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const { Pool } = pg;
-const dryEjecuta = process.argv.includes('--dry-run');
+const dryRun = process.argv.includes('--dry-run');
 const force = process.argv.includes('--force');
 
 async function run() {
@@ -33,9 +33,9 @@ async function run() {
     });
 
     try {
-        const summary = await runKeyMigration({ pool, dryEjecuta, force, logger });
+        const summary = await runKeyMigration({ pool, dryRun, force, logger });
         if (summary?.alreadyDone) {
-            logger.info('Key migration already applied. Usa --force to re-run.');
+            logger.info('Key migration already applied. Use --force to re-run.');
         }
     } finally {
         await pool.end();

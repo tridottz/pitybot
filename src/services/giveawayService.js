@@ -6,7 +6,7 @@ import { TitanBotError, ErrorTypes } from '../utils/errorHandler.js';
 import { getColor, botConfig } from '../config/bot.js';
 import { getEndedGiveaways, markGiveawayEnded } from '../utils/database.js';
 import { checkRateLimit, getRateLimitStatus } from '../utils/rateLimiter.js';
-import { logEvent, EVENT_TYPES } from './registrosService.js';
+import { logEvent, EVENT_TYPES } from './loggingService.js';
 
 const GIVEAWAY_CONFIG = botConfig.giveaways || {};
 const GIVEAWAY_INTERACTION_COOLDOWN = 1000;
@@ -20,7 +20,7 @@ export function parseDuration(durationString) {
         throw new TitanBotError(
             'Invalid duration format provided',
             ErrorTypes.VALIDATION,
-            'Please provide a valid duration (e.g., 1h, 30m, 5d, 10s).',
+            'Indica una duración válida (por ejemplo, 1h, 30m, 5d o 10s).',
             { durationString }
         );
     }
@@ -32,7 +32,7 @@ export function parseDuration(durationString) {
         throw new TitanBotError(
             `Invalid duration format: ${durationString}`,
             ErrorTypes.VALIDATION,
-            'Invalid duration format. Usa: 1h, 30m, 5d, 10s (min: 10s, max: 30d)',
+            'El formato de duración no es válido. Usa 1h, 30m, 5d o 10s (mínimo: 10s; máximo: 30d).',
             { input: durationString }
         );
     }
@@ -44,7 +44,7 @@ export function parseDuration(durationString) {
         throw new TitanBotError(
             `Duration amount out of range: ${amount}`,
             ErrorTypes.VALIDATION,
-            'Duration amount must be between 1 and 999.',
+            'La duración debe estar entre 1 y 999.',
             { amount, unit }
         );
     }
@@ -67,7 +67,7 @@ export function parseDuration(durationString) {
             throw new TitanBotError(
                 `Unknown duration unit: ${unit}`,
                 ErrorTypes.VALIDATION,
-                'Please use s (seconds), m (minutes), h (hours), or d (days).',
+                'Usa s (segundos), m (minutos), h (horas) o d (días).',
                 { unit }
             );
     }
@@ -77,7 +77,7 @@ export function parseDuration(durationString) {
         throw new TitanBotError(
             `Duration exceeds maximum: ${ms}ms > ${maxDuration}ms`,
             ErrorTypes.VALIDATION,
-            `Maximum duration is ${Math.floor(maxDuration / (24 * 60 * 60 * 1000))} days.`,
+            `La duración máxima es de ${Math.floor(maxDuration / (24 * 60 * 60 * 1000))} días.`,
             { requestedMs: ms, maxMs: maxDuration }
         );
     }
@@ -87,7 +87,7 @@ export function parseDuration(durationString) {
         throw new TitanBotError(
             `Duration below minimum: ${ms}ms < ${minDuration}ms`,
             ErrorTypes.VALIDATION,
-            `Minimum duration is ${Math.ceil(minDuration / 1000)} seconds.`,
+            `La duración mínima es de ${Math.ceil(minDuration / 1000)} segundos.`,
             { requestedMs: ms, minMs: minDuration }
         );
     }
@@ -100,7 +100,7 @@ export function validatePrize(prize) {
         throw new TitanBotError(
             'Prize must be a non-empty string',
             ErrorTypes.VALIDATION,
-            'Please provide a valid prize description.',
+            'Indica una descripción válida para el premio.',
             { prize }
         );
     }
@@ -110,7 +110,7 @@ export function validatePrize(prize) {
         throw new TitanBotError(
             `Prize length out of range: ${trimmed.length}`,
             ErrorTypes.VALIDATION,
-            'Prize must be between 1 and 256 characters.',
+            'El premio debe tener entre 1 y 256 caracteres.',
             { length: trimmed.length }
         );
     }
@@ -126,7 +126,7 @@ export function validateWinnerCount(winnerCount) {
         throw new TitanBotError(
             `Invalid winner count: ${winnerCount}`,
             ErrorTypes.VALIDATION,
-            `Winner count must be between ${minimumWinners} and ${maximumWinners}.`,
+            `La cantidad de ganadores debe estar entre ${minimumWinners} y ${maximumWinners}.`,
             { winnerCount, minimumWinners, maximumWinners }
         );
     }
@@ -140,22 +140,22 @@ export function createGiveawayEmbed(giveaway, status, winners = []) {
         
         const embed = new EmbedBuilder()
             .setTitle(`${statusEmoji} ${giveaway.prize}`)
-            .setDescription('React with the button below to enter!')
+            .setDescription('¡Pulsa el botón de abajo para participar!')
             .setColor(color)
             .addFields(
-                { name: '👤 Hosted by', value: `<@${giveaway.hostId}>`, inline: true },
-                { name: '🏆 Winners', value: giveaway.winnerCount.toString(), inline: true },
-                { name: '👥 Entries', value: giveaway.participants?.length?.toString() || '0', inline: true }
+                { name: '👤 Organizado por', value: `<@${giveaway.hostId}>`, inline: true },
+                { name: '🏆 Ganadores', value: giveaway.winnerCount.toString(), inline: true },
+                { name: '👥 Participantes', value: giveaway.participants?.length?.toString() || '0', inline: true }
             );
 
         if (isEnded) {
             const winnerDisplay = winners.length > 0 
                 ? winners.map(id => `<@${id}>`).join(', ')
-                : 'No valid entries';
-            embed.addFields({ name: '🎯 Winners', value: winnerDisplay, inline: false });
+                : 'No hubo participantes válidos';
+            embed.addFields({ name: '🎯 Ganadores', value: winnerDisplay, inline: false });
         } else {
             const endTime = giveaway.endsAt || giveaway.endTime;
-            embed.addFields({ name: '⏰ Ends', value: `<t:${Math.floor(endTime / 1000)}:R>`, inline: false });
+            embed.addFields({ name: '⏰ Finaliza', value: `<t:${Math.floor(endTime / 1000)}:R>`, inline: false });
         }
 
         embed.setTimestamp();
@@ -180,12 +180,12 @@ export function createGiveawayButtons(ended = false) {
             row.addComponents(
                 new ButtonBuilder()
                     .setCustomId('giveaway_reroll')
-                    .setLabel('🎲 Reroll')
+                    .setLabel('🎲 Elegir de nuevo')
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(false),
                 new ButtonBuilder()
                     .setCustomId('giveaway_view')
-                    .setLabel('👁️ View Winners')
+                    .setLabel('👁️ Ver ganadores')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(false)
             );
@@ -193,12 +193,12 @@ export function createGiveawayButtons(ended = false) {
             row.addComponents(
                 new ButtonBuilder()
                     .setCustomId('giveaway_join')
-                    .setLabel('🎉 Join')
+                    .setLabel('🎉 Participar')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(false),
                 new ButtonBuilder()
                     .setCustomId('giveaway_end')
-                    .setLabel('🛑 End')
+                    .setLabel('🛑 Finalizar')
                     .setStyle(ButtonStyle.Danger)
                     .setDisabled(false)
             );
@@ -227,7 +227,7 @@ export function selectWinners(participants, winnerCount) {
         throw new TitanBotError(
             'Invalid winner count for selection',
             ErrorTypes.VALIDATION,
-            'Winner count must be at least 1.',
+            'Debe haber al menos 1 ganador.',
             { winnerCount }
         );
     }
@@ -253,7 +253,7 @@ export function selectWinners(participants, winnerCount) {
     }
 }
 
-export function isUsarRateLimited(userId, giveawayId) {
+export function isUserRateLimited(userId, giveawayId) {
     const status = getRateLimitStatus(
         getGiveawayInteractionKey(userId, giveawayId),
         GIVEAWAY_INTERACTION_COOLDOWN,
@@ -261,7 +261,7 @@ export function isUsarRateLimited(userId, giveawayId) {
     return status.attempts >= 1 && status.remaining > 0;
 }
 
-export async function recordUsarInteraction(userId, giveawayId) {
+export async function recordUserInteraction(userId, giveawayId) {
     await checkRateLimit(
         getGiveawayInteractionKey(userId, giveawayId),
         1,
@@ -284,7 +284,7 @@ export async function endGiveaway(client, giveaway, guildId, endedBy) {
             throw new TitanBotError(
                 `Giveaway ${giveaway.messageId} is already ended`,
                 ErrorTypes.VALIDATION,
-                'This giveaway has already ended.',
+                'Este sorteo ya terminó.',
                 { giveawayId: giveaway.messageId, status: 'already_ended' }
             );
         }
@@ -387,7 +387,7 @@ export async function checkGiveaways(client) {
         }
 
         if (winners.length > 0) {
-          const winnerAnnouncement = `🎉 Congratulations ${winnerMentions}! You won the **${giveaway.prize || 'giveaway'}**! Please contact <@${giveaway.hostId}> to claim your prize.`;
+          const winnerAnnouncement = `🎉 ¡Felicidades ${winnerMentions}! Ganaste **${giveaway.prize || 'el sorteo'}**. Contacta a <@${giveaway.hostId}> para reclamar tu premio.`;
           const winnerPingMsg = await channel.send({ content: winnerAnnouncement });
           giveaway.winnerPingMessageId = winnerPingMsg.id;
           await markGiveawayEnded(client, giveawayId, giveaway);
@@ -398,7 +398,7 @@ export async function checkGiveaways(client) {
               guildId,
               eventType: EVENT_TYPES.GIVEAWAY_WINNER,
               data: {
-                description: `Giveaway ended with ${winners.length} winner(s)`,
+                description: `El sorteo terminó con ${winners.length} ganador(es)`,
                 channelId: channel.id,
                 fields: [
                   {
@@ -423,7 +423,7 @@ export async function checkGiveaways(client) {
             logger.debug('Error logging giveaway winner:', error);
           }
         } else {
-          await channel.send({ content: `The giveaway for **${giveaway.prize}** has ended with no valid entries.` });
+          await channel.send({ content: `El sorteo de **${giveaway.prize}** terminó sin participantes válidos.` });
         }
 
         logger.info(`Ended giveaway ${messageId} in guild ${guildId}`);

@@ -3,10 +3,10 @@ import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '
 import { logger } from '../../utils/logger.js';
 import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
-    .setName("moneda")
+    .setName("flip")
     .setDescription("Lanza una moneda (cara o cruz)."),
   category: 'Fun',
 
@@ -19,7 +19,7 @@ export default {
       `The coin landed on... **${result}** ${emoji}!`,
     );
 
-    await InteractionAyudaer.safeReply(interaction, { embeds: [embed] });
+    await InteractionHelper.safeReply(interaction, { embeds: [embed] });
     logger.debug(`Flip command executed by user ${interaction.user.id} in guild ${interaction.guildId}`);
   },
 };

@@ -1,16 +1,16 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
-import { shopItems } from '../../config/tienda/items.js';
-import { getEconomyData, setEconomyData } from '../../utils/economia.js';
+import { shopItems } from '../../config/shop/items.js';
+import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { getGuildConfig } from '../../services/config/guildConfig.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 const SHOP_ITEMS = shopItems;
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('comprar')
+        .setName('buy')
         .setDescription('Compra un artículo de la tienda')
         .addStringOption(option =>
             option
@@ -21,14 +21,14 @@ export default {
         .addIntegerOption(option =>
             option
                 .setName('quantity')
-                .setDescription('Cantidad que quieres comprar (por defecto: 1)')
+                .setDescription('Cantidad que quieres comprar (predeterminado: 1)')
                 .setRequired(false)
                 .setMinValue(1)
                 .setMaxValue(10)
         ),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionAyudaer.safeDefer(interaction);
+        const deferred = await InteractionHelper.safeDefer(interaction);
         if (!deferred) return;
 
             const userId = interaction.user.id;
@@ -51,7 +51,7 @@ export default {
                 throw createError(
                     "Invalid quantity",
                     ErrorTypes.VALIDATION,
-                    "You must purchase a quantity of 1 or more.",
+                    "Debes comprar al menos 1 unidad.",
                     { quantity }
                 );
             }
@@ -67,7 +67,7 @@ export default {
                 throw createError(
                     "Insufficient funds",
                     ErrorTypes.VALIDATION,
-                    `You need **$${totalCost.toLocaleString()}** to purchase ${quantity}x **${item.name}**, but you only have **$${userData.wallet.toLocaleString()}** in cash.`,
+                    `Necesitas **$${totalCost.toLocaleString()}** para comprar ${quantity}x **${item.name}**, pero solo tienes **$${userData.wallet.toLocaleString()}** en efectivo.`,
                     { required: totalCost, current: userData.wallet, itemId, quantity }
                 );
             }
@@ -77,7 +77,7 @@ export default {
                     throw createError(
                         "Premium role not configured",
                         ErrorTypes.CONFIGURATION,
-                        "The **Premium Shop Role** has not been configured by a server administrator yet.",
+                        "Un administrador aún no ha configurado el **rol premium de la tienda**.",
                         { itemId }
                     );
                 }
@@ -85,7 +85,7 @@ export default {
                     throw createError(
                         "Role already owned",
                         ErrorTypes.VALIDATION,
-                        `You already have the **${item.name}** role.`,
+                        `Ya tienes el rol **${item.name}**.`,
                         { itemId, roleId: PREMIUM_ROLE_ID }
                     );
                 }
@@ -93,7 +93,7 @@ export default {
                     throw createError(
                         "Invalid quantity for role",
                         ErrorTypes.VALIDATION,
-                        `You can only purchase the **${item.name}** role once.`,
+                        `Solo puedes comprar una vez el rol **${item.name}**.`,
                         { itemId, quantity }
                     );
                 }
@@ -101,7 +101,7 @@ export default {
 
             userData.wallet -= totalCost;
 
-            let successDescription = `You successfully purchased ${quantity}x **${item.name}** for **$${totalCost.toLocaleString()}**!`;
+            let successDescription = `Compraste ${quantity} **${item.name}** por **$${totalCost.toLocaleString()}**.`;
 
             if (item.type === "role" && itemId === "premium_role") {
                 const member = interaction.member;
@@ -112,7 +112,7 @@ export default {
                     throw createError(
                         "Role not found",
                         ErrorTypes.CONFIGURATION,
-                        "The configured premium role no longer exists in this guild.",
+                        "El rol prémium configurado ya no existe en este servidor.",
                         { roleId: PREMIUM_ROLE_ID }
                     );
                 }
@@ -122,39 +122,39 @@ export default {
                         role,
                         `Purchased role: ${item.name}`,
                     );
-                    successDescription += `\n\n**👑 The role ${role.toString()} has been granted to you!**`;
+                    successDescription += `\n\n**👑 Se te asignó el rol ${role.toString()}.**`;
                 } catch (roleError) {
                     userData.wallet += totalCost;
                     await setEconomyData(client, guildId, userId, userData);
                     throw createError(
                         "Role assignment failed",
                         ErrorTypes.DISCORD_API,
-                        "Successfully deducted money, but failed to grant the role. Your cash has been refunded.",
+                        "Se descontó el dinero, pero no se pudo asignar el rol. Se te devolvió el dinero.",
                         { roleId: PREMIUM_ROLE_ID, originalError: roleError.message }
                     );
                 }
             } else if (item.type === "upgrade") {
                 userData.upgrades[itemId] = true;
-                successDescription += `\n\n**✨ Your upgrade is now active!**`;
+                successDescription += `\n\n**✨ ¡Tu mejora ya está activa!**`;
             } else if (item.type === "consumable" || item.type === "tool") {
                 userData.inventory[itemId] =
                     (userData.inventory[itemId] || 0) + quantity;
                 if (item.type === "tool") {
-                    successDescription += `\n\n**🛠️ ${item.name} added to your inventory!**`;
+                    successDescription += `\n\n**🛠️ ¡${item.name} se añadió a tu inventario!**`;
                 }
             }
 
             await setEconomyData(client, guildId, userId, userData);
 
             const embed = successEmbed(
-                "💰 Purchase Successful",
+                "💰 Compra realizada",
                 successDescription,
             ).addFields({
-                name: "New Balance",
+                name: "Nuevo saldo",
                 value: `$${userData.wallet.toLocaleString()}`,
                 inline: true,
             });
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
     }, { command: 'buy' })
 };

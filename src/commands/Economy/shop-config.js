@@ -1,19 +1,19 @@
 import { SlashCommandBuilder } from 'discord.js';
-import shopConfigSetrole from './modules/tienda_config_setrole.js';
+import shopConfigSetrole from './modules/shop_config_setrole.js';
 
 export default {
     slashOnly: true,
     data: new SlashCommandBuilder()
-        .setName('config-tienda')
-        .setDescription('Configura la tienda (requiere Administrar servidor).')
+        .setName('shop-config')
+        .setDescription('Configura la tienda. (Se requiere el permiso Administrar servidor)')
         .addSubcommand(subcommand =>
             subcommand
                 .setName('setrole')
-                .setDescription('Establece el rol de Discord que se otorgará al comprar el artículo de rol prémium.')
+                .setDescription('Establece el rol de Discord que se otorgará al comprar el artículo «Rol prémium».')
                 .addRoleOption(option =>
                     option
                         .setName('role')
-                        .setDescription('El rol que se otorgará al comprar el rol prémium.')
+                        .setDescription('Rol que se otorgará al comprar el artículo «Rol prémium».')
                         .setRequired(true),
                 ),
         ),

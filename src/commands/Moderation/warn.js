@@ -2,31 +2,31 @@ import { SlashCommandBuilder, PermissionFlagsBits, PermissionsBitField, ChannelT
 import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { logModerationAction } from '../../utils/moderation.js';
 import { logger } from '../../utils/logger.js';
-import { WarningService } from '../../services/moderation/advertiringService.js';
+import { WarningService } from '../../services/moderation/warningService.js';
 import { ModerationService } from '../../services/moderation/moderationService.js';
 import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
-        .setName("advertir")
+        .setName("warn")
         .setDescription("Advierte a un usuario")
-        .addUsarOption((o) =>
+        .addUserOption((o) =>
             o
                 .setName("target")
                 .setRequired(true)
-                .setDescription("Usar to warn"),
+                .setDescription("Usuario al que quieres advertir"),
         )
         .addStringOption((o) =>
             o
                 .setName("reason")
                 .setRequired(true)
-                .setDescription("Reason for the warning"),
+                .setDescription("Motivo de la advertencia"),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
     category: "moderation",
 
     async execute(interaction, config, client) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction);
+        const deferSuccess = await InteractionHelper.safeDefer(interaction);
         if (!deferSuccess) {
             logger.warn(`Warn interaction defer failed`, {
                 userId: interaction.user.id,
@@ -36,7 +36,7 @@ export default {
             return;
         }
 
-        const target = interaction.options.getUsar("target");
+        const target = interaction.options.getUser("target");
         const member = interaction.options.getMember("target");
         const reason = interaction.options.getString("reason");
         const moderator = interaction.user;
@@ -44,9 +44,9 @@ export default {
 
         if (!target) {
             throw new TitanBotError(
-                'Falta el usuario de destino',
+                'Missing target user',
                 ErrorTypes.USER_INPUT,
-                'You must specify a user to warn.',
+                'Debes indicar un usuario para advertir.',
                 { subtype: 'invalid_user' },
             );
         }
@@ -55,7 +55,7 @@ export default {
             throw new TitanBotError(
                 'Missing warning reason',
                 ErrorTypes.VALIDATION,
-                'You must provide a reason for the warning.',
+                'Debes indicar el motivo de la advertencia.',
                 { subtype: 'missing_required' },
             );
         }
@@ -82,7 +82,7 @@ export default {
             client,
             guild: interaction.guild,
             event: {
-                action: "Usar Warned",
+                action: "User Warned",
                 target: `${target.tag} (${target.id})`,
                 executor: `${moderator.tag} (${moderator.id})`,
                 reason,
@@ -96,11 +96,11 @@ export default {
             }
         });
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
-                    `⚠️ **Warned** ${target.tag}`,
-                    `**Motivo:** ${reason}\n**Total Warns:** ${totalCount}`,
+                    `⚠️ **Advertencia para** ${target.tag}`,
+                    `**Motivo:** ${reason}\n**Total de advertencias:** ${totalCount}`,
                 ),
             ],
         });

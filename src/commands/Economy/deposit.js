@@ -1,22 +1,22 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
-import { successEmbed, buildUsarErrorEmbed } from '../../utils/embeds.js';
-import { getEconomyData, setEconomyData, getMaxBankCapacity } from '../../utils/economia.js';
+import { successEmbed, buildUserErrorEmbed } from '../../utils/embeds.js';
+import { getEconomyData, setEconomyData, getMaxBankCapacity } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('depositar')
+        .setName('deposit')
         .setDescription('Deposita dinero de tu cartera en el banco')
         .addStringOption(option =>
             option
                 .setName('amount')
-                .setDescription('Amount to deposit (number or "all")')
+                .setDescription('Cantidad que quieres depositar (un número o «all»)')
                 .setRequired(true)
         ),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionAyudaer.safeDefer(interaction);
+        const deferred = await InteractionHelper.safeDefer(interaction);
         if (!deferred) return;
         
         const userId = interaction.user.id;
@@ -29,7 +29,7 @@ export default {
                 throw createError(
                     "Failed to load economy data",
                     ErrorTypes.DATABASE,
-                    "Failed to load your economy data. Please try again later.",
+                    "No se pudieron cargar tus datos de economía. Inténtalo más tarde.",
                     { userId, guildId }
                 );
             }
@@ -46,7 +46,7 @@ export default {
                     throw createError(
                         "Invalid deposit amount",
                         ErrorTypes.VALIDATION,
-                        `Please enter a valid number or 'all'. You entered: \`${amountInput}\``,
+                        `Escribe un número válido o 'all'. Ingresaste: \`${amountInput}\``,
                         { amountInput, userId }
                     );
                 }
@@ -65,7 +65,7 @@ export default {
                 depositAmount = userData.wallet;
                 await interaction.followUp({
                     embeds: [
-                        buildUsarErrorEmbed(
+                        buildUserErrorEmbed(
                             'validation',
                             `You tried to deposit more than you have. Depositing your remaining cash: **$${depositAmount.toLocaleString()}**`
                         )
@@ -80,7 +80,7 @@ export default {
                 throw createError(
                     "Bank is full",
                     ErrorTypes.VALIDATION,
-                    `Your bank is currently full (Max Capacity: $${maxBank.toLocaleString()}). Purchase a **Bank Upgrade** to increase your limit.`,
+                    `Tu banco está lleno (capacidad máxima: $${maxBank.toLocaleString()}). Compra una **mejora de banco** para aumentar el límite.`,
                     { maxBank, currentBank: userData.bank, userId }
                 );
             }
@@ -92,7 +92,7 @@ export default {
                 if (amountInput.toLowerCase() !== "all") {
                     await interaction.followUp({
                         embeds: [
-                            buildUsarErrorEmbed(
+                            buildUserErrorEmbed(
                                 'validation',
                                 `You only had space for **$${depositAmount.toLocaleString()}** in your bank account (Max: $${maxBank.toLocaleString()}). The rest remains in your cash.`
                             )
@@ -117,22 +117,22 @@ export default {
             await setEconomyData(client, guildId, userId, userData);
 
             const embed = successEmbed(
-                'Deposit Successful',
-                `You successfully deposited **$${depositAmount.toLocaleString()}** into your bank.`
+                'Depósito realizado',
+                `Depositaste **$${depositAmount.toLocaleString()}** en tu banco.`
             )
                 .addFields(
                     {
-                        name: "New Cash Balance",
+                        name: "Nuevo saldo en efectivo",
                         value: `$${userData.wallet.toLocaleString()}`,
                         inline: true,
                     },
                     {
-                        name: "New Bank Balance",
+                        name: "Nuevo saldo en el banco",
                         value: `$${userData.bank.toLocaleString()} / $${maxBank.toLocaleString()}`,
                         inline: true,
                     },
                 );
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
     }, { command: 'deposit' })
 };

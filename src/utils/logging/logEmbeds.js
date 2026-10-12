@@ -107,7 +107,7 @@ export function formatRatingStars(rating) {
   return `${'⭐'.repeat(clamped)} (${clamped}/5)`;
 }
 
-export async function resolveUsarAuthor(client, userId) {
+export async function resolveUserAuthor(client, userId) {
   if (!userId) {
     return null;
   }
@@ -120,7 +120,7 @@ export async function resolveUsarAuthor(client, userId) {
     };
   } catch {
     return {
-      name: `Usar ${userId}`,
+      name: `User ${userId}`,
     };
   }
 }

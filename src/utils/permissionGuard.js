@@ -2,7 +2,7 @@
 
 import { PermissionFlagsBits } from 'discord.js';
 import { logger } from './logger.js';
-import { replyUsarError, ErrorTypes } from './errorHandler.js';
+import { replyUserError, ErrorTypes } from './errorHandler.js';
 import { isBotOwner, getBotMessage } from '../config/bot.js';
 
 /**
@@ -128,7 +128,7 @@ export async function checkModerationPermissions(
     return true;
   }
 
-  await replyUsarError(interaction, {
+  await replyUserError(interaction, {
     type: ErrorTypes.PERMISSION,
     message: errorMessage,
     context: { source: 'permissionGuard.checkModerationPermissions' },
@@ -167,7 +167,7 @@ export async function enforceDefaultCommandPermissions(interaction, command, con
   }
 
   const commandName = command?.data?.name ?? interaction.commandName ?? 'command';
-  await replyUsarError(interaction, {
+  await replyUserError(interaction, {
     type: ErrorTypes.PERMISSION,
     message: getBotMessage('noPermission'),
     context: {
@@ -215,22 +215,22 @@ export function botHasPermission(channel, permissions) {
   return channel.permissionsFor(botMember).has(permissions);
 }
 
-export async function checkUsarPermissions(
+export async function checkUserPermissions(
   interaction,
   requiredPermissions,
-  errorMessage = 'You do not have permission to use this command.'
+  errorMessage = 'No tienes permiso para usar este comando.'
 ) {
   const member = interaction.member;
 
   if (!member.permissions.has(requiredPermissions)) {
-    await replyUsarError(interaction, {
+    await replyUserError(interaction, {
       type: ErrorTypes.PERMISSION,
       message: errorMessage,
-      context: { source: 'permissionGuard.checkUsarPermissions' }
+      context: { source: 'permissionGuard.checkUserPermissions' }
     });
 
     logger.warn(
-      `[PERMISSION_DENIED] Usar ${member.id} attempted command ${interaction.commandName} in guild ${interaction.guildId}`
+      `[PERMISSION_DENIED] User ${member.id} attempted command ${interaction.commandName} in guild ${interaction.guildId}`
     );
     return false;
   }
@@ -246,9 +246,9 @@ export async function checkBotPermissions(
   const targetChannel = channel || interaction.channel;
 
   if (!targetChannel || !targetChannel.guild) {
-    await replyUsarError(interaction, {
+    await replyUserError(interaction, {
       type: ErrorTypes.UNKNOWN,
-      message: 'Could not determine channel.',
+      message: 'No se pudo determinar el canal.',
       context: { source: 'permissionGuard.checkBotPermissions' }
     });
     return false;
@@ -256,9 +256,9 @@ export async function checkBotPermissions(
 
   const botMember = targetChannel.guild.members.me;
   if (!botMember) {
-    await replyUsarError(interaction, {
+    await replyUserError(interaction, {
       type: ErrorTypes.UNKNOWN,
-      message: 'Could not find bot member in this guild.',
+      message: 'No se pudo encontrar al bot como miembro de este servidor.',
       context: { source: 'permissionGuard.checkBotPermissions' }
     });
     return false;
@@ -275,7 +275,7 @@ export async function checkBotPermissions(
   }
 
   if (missingPerms.length > 0) {
-    await replyUsarError(interaction, {
+    await replyUserError(interaction, {
       type: ErrorTypes.PERMISSION,
       message: `I need the following permissions in ${targetChannel}: ${missingPerms.join(', ')}`,
       context: { source: 'permissionGuard.checkBotPermissions', subtype: 'bot_permission' }
@@ -290,7 +290,7 @@ export async function checkBotPermissions(
   return true;
 }
 
-function hashUsarId(userId) {
+function hashUserId(userId) {
 
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {
@@ -303,7 +303,7 @@ function hashUsarId(userId) {
 
 export function auditPermissionCheck(userId, action, allowed, reason = null) {
 
-  const userHash = hashUsarId(userId);
+  const userHash = hashUserId(userId);
 
   if (allowed) {
     logger.debug('[PERMISSION_AUDIT] Permission granted', { action, userHash });
@@ -324,7 +324,7 @@ export default {
   memberMeetsCommandPermissions,
   checkModerationPermissions,
   enforceDefaultCommandPermissions,
-  checkUsarPermissions,
+  checkUserPermissions,
   checkBotPermissions,
   auditPermissionCheck
 };

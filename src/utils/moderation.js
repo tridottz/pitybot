@@ -1,17 +1,17 @@
 // moderation.js
 
-import { logEvent as logAuditEvent, EVENT_TYPES } from '../services/registrosService.js';
-import { formatLogLine } from './registros/logEmbeds.js';
+import { logEvent as logAuditEvent, EVENT_TYPES } from '../services/loggingService.js';
+import { formatLogLine } from './logging/logEmbeds.js';
 import { logger } from './logger.js';
 import { getFromDb, setInDb } from './database.js';
 
 const ACTION_TO_EVENT_TYPE = {
-  'Member Baneado': EVENT_TYPES.MODERATION_BAN,
+  'Member Banned': EVENT_TYPES.MODERATION_BAN,
   'Member Kicked': EVENT_TYPES.MODERATION_KICK,
   'Member Timed Out': EVENT_TYPES.MODERATION_TIMEOUT,
   'Member Untimeouted': EVENT_TYPES.MODERATION_UNTIMEOUT,
   'Member Unbanned': EVENT_TYPES.MODERATION_UNBAN,
-  'Usar Warned': EVENT_TYPES.MODERATION_WARN,
+  'User Warned': EVENT_TYPES.MODERATION_WARN,
   'Warnings Viewed': EVENT_TYPES.MODERATION_WARN,
   'Messages Purged': EVENT_TYPES.MODERATION_PURGE,
   'Channel Locked': EVENT_TYPES.MODERATION_LOCK,
@@ -32,7 +32,7 @@ function buildModerationLogData(event) {
 
   const lines = [];
   if (event.target) {
-    lines.push(formatLogLine('Usar', event.target));
+    lines.push(formatLogLine('User', event.target));
   }
   if (event.reason) {
     const reason = event.reason.length > 900
@@ -148,7 +148,7 @@ export async function getModerationCases(guildId, filters = {}) {
     let filteredCases = caseList;
     
     if (userId) {
-      filteredCases = filteredCases.filter(case_ => case_.targetUsarId === userId);
+      filteredCases = filteredCases.filter(case_ => case_.targetUserId === userId);
     }
     
     if (moderatorId) {
@@ -181,7 +181,7 @@ export async function logModerationAction({ client, guild, event }) {
       reason: event.reason,
       duration: event.duration,
       metadata: event.metadata,
-      targetUsarId: event.metadata?.userId,
+      targetUserId: event.metadata?.userId,
       moderatorId: event.metadata?.moderatorId
     }
   });

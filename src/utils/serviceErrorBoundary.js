@@ -1,6 +1,6 @@
 // serviceErrorBoundary.js
 
-import { createError, ErrorTypes, TitanBotError, categorizeError, getUsarMessage } from './errorHandler.js';
+import { createError, ErrorTypes, TitanBotError, categorizeError, getUserMessage } from './errorHandler.js';
 import { resolveErrorCode, getErrorMetadata } from './errorRegistry.js';
 
 function normalizeBoundaryContext(context = {}) {
@@ -31,8 +31,8 @@ export function ensureTypedServiceError(error, options = {}) {
   });
   const errorMetadata = getErrorMetadata(errorCode);
   const message = options.message || `${service}.${operation} failed`;
-  const userMessage = options.userMessage || getUsarMessage(error);
-  const isExpectedUsarFailure = [
+  const userMessage = options.userMessage || getUserMessage(error);
+  const isExpectedUserFailure = [
     ErrorTypes.VALIDATION,
     ErrorTypes.USER_INPUT,
     ErrorTypes.CONFIGURATION,
@@ -50,7 +50,7 @@ export function ensureTypedServiceError(error, options = {}) {
     retryable: errorMetadata.retryable,
     originalErrorMessage: error?.message || String(error),
     originalErrorName: error?.name || 'Error',
-    expected: options.expected ?? isExpectedUsarFailure,
+    expected: options.expected ?? isExpectedUserFailure,
   });
 }
 

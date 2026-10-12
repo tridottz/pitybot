@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { successEmbed, warningEmbed, buildUsarErrorEmbed } from '../../utils/embeds.js';
-import { getEconomyData, setEconomyData } from '../../utils/economia.js';
+import { successEmbed, warningEmbed, buildUserErrorEmbed } from '../../utils/embeds.js';
+import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { BotConfig } from '../../config/bot.js';
 
 const ROB_COOLDOWN = BotConfig.economy?.cooldowns?.rob ?? 4 * 60 * 60 * 1000;
@@ -12,50 +12,50 @@ const FINE_PERCENTAGE = 0.1;
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('robar')
+        .setName('rob')
         .setDescription('Intenta robar a otro usuario (muy arriesgado)')
-        .addUsarOption(option =>
+        .addUserOption(option =>
             option
                 .setName('user')
-                .setDescription('Usar to rob')
+                .setDescription('Usuario al que quieres robar')
                 .setRequired(true)
         ),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionAyudaer.safeDefer(interaction);
+        const deferred = await InteractionHelper.safeDefer(interaction);
         if (!deferred) return;
             
             const robberId = interaction.user.id;
-            const victimUsar = interaction.options.getUsar("user");
+            const victimUser = interaction.options.getUser("user");
             const guildId = interaction.guildId;
             const now = Date.now();
 
-            if (robberId === victimUsar.id) {
+            if (robberId === victimUser.id) {
                 throw createError(
                     "Cannot rob self",
                     ErrorTypes.VALIDATION,
-                    "You cannot rob yourself.",
-                    { robberId, victimId: victimUsar.id }
+                    "No puedes robarte a ti mismo.",
+                    { robberId, victimId: victimUser.id }
                 );
             }
             
-            if (victimUsar.bot) {
+            if (victimUser.bot) {
                 throw createError(
                     "Cannot rob bot",
                     ErrorTypes.VALIDATION,
-                    "You cannot rob a bot.",
-                    { victimId: victimUsar.id, isBot: true }
+                    "No puedes robar a un bot.",
+                    { victimId: victimUser.id, isBot: true }
                 );
             }
 
             const robberData = await getEconomyData(client, guildId, robberId);
-            const victimData = await getEconomyData(client, guildId, victimUsar.id);
+            const victimData = await getEconomyData(client, guildId, victimUser.id);
             
             if (!robberData || !victimData) {
                 throw createError(
                     "Failed to load economy data",
                     ErrorTypes.DATABASE,
-                    "Failed to load economy data. Please try again later.",
+                    "No se pudieron cargar los datos de economía. Inténtalo más tarde.",
                     { robberId: !!robberData, victimId: !!victimData, guildId }
                 );
             }
@@ -70,7 +70,7 @@ export default {
                 throw createError(
                     "Robbery cooldown active",
                     ErrorTypes.RATE_LIMIT,
-                    `You need to lay low. Wait **${hours}h ${minutes}m** before attempting another robbery.`,
+                    `Debes pasar desapercibido. Espera **${hours} h ${minutes} min** antes de intentar otro robo.`,
                     { remaining, hours, minutes, cooldownType: 'rob' }
                 );
             }
@@ -79,7 +79,7 @@ export default {
                 throw createError(
                     "Victim too poor",
                     ErrorTypes.VALIDATION,
-                    `${victimUsar.username} is too poor. They need at least $500 cash to be worth robbing.`,
+                    `${victimUser.username} is too poor. They need at least $500 cash to be worth robbing.`,
                     { victimWallet: victimData.wallet, required: 500 }
                 );
             }
@@ -90,11 +90,11 @@ export default {
                 robberData.lastRob = now;
                 await setEconomyData(client, guildId, robberId, robberData);
 
-                return await InteractionAyudaer.safeEditReply(interaction, {
+                return await InteractionHelper.safeEditReply(interaction, {
                     embeds: [
                         warningEmbed(
-                            'Robbery Blocked',
-                            `${victimUsar.username} was prepared! Your attempt failed because they own a **Personal Safe**. You got away clean but didn't gain anything.`
+                            'Robo bloqueado',
+                            `¡${victimUser.username} estaba preparado! Tu intento falló porque tiene una **caja fuerte personal**. Saliste ileso, pero no obtuviste nada.`
                         )
                     ],
                 });
@@ -110,8 +110,8 @@ export default {
                 victimData.wallet = (victimData.wallet || 0) - amountStolen;
 
                 resultEmbed = successEmbed(
-                    'Robbery Successful',
-                    `You successfully stole **$${amountStolen.toLocaleString()}** from ${victimUsar.username}!`
+                    'Robo exitoso',
+                    `Le robaste **$${amountStolen.toLocaleString()}** a ${victimUser.username}.`
                 );
             } else {
                 const fineAmount = Math.floor((robberData.wallet || 0) * FINE_PERCENTAGE);
@@ -122,33 +122,33 @@ export default {
                     robberData.wallet = (robberData.wallet || 0) - fineAmount;
                 }
 
-                resultEmbed = buildUsarErrorEmbed(
+                resultEmbed = buildUserErrorEmbed(
                     'unknown',
-                    `You failed the robbery and were caught! You were fined **$${fineAmount.toLocaleString()}** of your own cash.`,
-                    { titleOverride: 'Robbery Failed' }
+                    `Falló el robo y te atraparon. Recibiste una multa de **$${fineAmount.toLocaleString()}** de tu propio efectivo.`,
+                    { titleOverride: 'Robo fallido' }
                 );
             }
 
             robberData.lastRob = now;
 
             await setEconomyData(client, guildId, robberId, robberData);
-            await setEconomyData(client, guildId, victimUsar.id, victimData);
+            await setEconomyData(client, guildId, victimUser.id, victimData);
 
             resultEmbed
                 .addFields(
                     {
-                        name: `Your New Cash (${interaction.user.username})`,
+                        name: `Tu nuevo efectivo (${interaction.user.username})`,
                         value: `$${robberData.wallet.toLocaleString()}`,
                         inline: true,
                     },
                     {
-                        name: `Victim's New Cash (${victimUsar.username})`,
+                        name: `Nuevo efectivo de ${victimUser.username}`,
                         value: `$${victimData.wallet.toLocaleString()}`,
                         inline: true,
                     },
                 )
-                .setFooter({ text: `Next robbery available in ${Math.ceil(ROB_COOLDOWN / (60 * 60 * 1000))} hours.` });
+                .setFooter({ text: `Podrás volver a robar en ${Math.ceil(ROB_COOLDOWN / (60 * 60 * 1000))} horas.` });
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [resultEmbed] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [resultEmbed] });
     }, { command: 'rob' })
 };

@@ -10,8 +10,8 @@ import {
     createGiveawayEmbed, 
     createGiveawayButtons 
 } from '../../services/giveawayService.js';
-import { logEvent, EVENT_TYPES } from '../../services/registrosService.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { logEvent, EVENT_TYPES } from '../../services/loggingService.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 import { botConfig } from '../../config/bot.js';
 
@@ -20,8 +20,8 @@ const GIVEAWAY_MAX_WINNERS = botConfig.giveaways?.maximumWinners ?? 10;
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("crear-sorteo")
-        .setDescription("Starts a new giveaway in a specified channel.")
+        .setName("gcreate")
+        .setDescription("Inicia un sorteo en el canal indicado.")
         .addStringOption((option) =>
             option
                 .setName("duration")
@@ -33,7 +33,7 @@ export default {
         .addIntegerOption((option) =>
             option
                 .setName("winners")
-                .setDescription("The number of winners to pick.")
+                .setDescription("Número de ganadores que se elegirán.")
                 .setMinValue(GIVEAWAY_MIN_WINNERS)
                 .setMaxValue(GIVEAWAY_MAX_WINNERS)
                 .setRequired(true),
@@ -41,13 +41,13 @@ export default {
         .addStringOption((option) =>
             option
                 .setName("prize")
-                .setDescription("The prize being given away.")
+                .setDescription("Premio del sorteo.")
                 .setRequired(true),
         )
         .addChannelOption((option) =>
             option
                 .setName("channel")
-                .setDescription("The channel to send the giveaway to (defaults to current channel).")
+                .setDescription("Canal donde se publicará el sorteo (por defecto, el canal actual).")
                 .addChannelTypes(ChannelType.GuildText)
                 .setRequired(false),
         )
@@ -55,7 +55,7 @@ export default {
 
     async execute(interaction) {
         // Defer up front: sending the giveaway message + DB write can exceed the 3s window
-        await InteractionAyudaer.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+        await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
 
         if (!interaction.inGuild()) {
             throw new TitanBotError(
@@ -68,9 +68,9 @@ export default {
 
         if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
             throw new TitanBotError(
-                'Usar lacks ManageGuild permission',
+                'User lacks ManageGuild permission',
                 ErrorTypes.PERMISSION,
-                "You need the 'Manage Server' permission to start a giveaway.",
+                "Necesitas el permiso 'Administrar servidor' para iniciar un sorteo.",
                 { userId: interaction.user.id, guildId: interaction.guildId }
             );
         }
@@ -90,7 +90,7 @@ export default {
             throw new TitanBotError(
                 'Target channel is not text-based',
                 ErrorTypes.VALIDATION,
-                'The channel must be a text channel.',
+                'El canal debe ser de texto.',
                 { channelId: targetChannel.id, channelType: targetChannel.type }
             );
         }
@@ -116,7 +116,7 @@ export default {
         const row = createGiveawayButtons(false);
 
         const giveawayMessage = await targetChannel.send({
-            content: "🎉 **NEW GIVEAWAY** 🎉",
+            content: "🎉 **NUEVO SORTEO** 🎉",
             embeds: [embed],
             components: [row],
         });
@@ -138,27 +138,27 @@ export default {
                 guildId: interaction.guildId,
                 eventType: EVENT_TYPES.GIVEAWAY_CREATE,
                 data: {
-                    description: `Giveaway created: ${prizeName}`,
+                    description: `Sorteo creado: ${prizeName}`,
                     channelId: targetChannel.id,
                     userId: interaction.user.id,
                     fields: [
                         {
-                            name: 'Prize',
+                            name: 'Premio',
                             value: prizeName,
                             inline: true
                         },
                         {
-                            name: 'Winners',
+                            name: 'Ganadores',
                             value: winnerCount.toString(),
                             inline: true
                         },
                         {
-                            name: 'Duration',
+                            name: 'Duración',
                             value: durationString,
                             inline: true
                         },
                         {
-                            name: 'Channel',
+                            name: 'Canal',
                             value: targetChannel.toString(),
                             inline: true
                         }
@@ -171,11 +171,11 @@ export default {
 
         logger.info(`Giveaway created successfully: ${giveawayMessage.id} in ${targetChannel.name}`);
 
-        await InteractionAyudaer.safeReply(interaction, {
+        await InteractionHelper.safeReply(interaction, {
             embeds: [
                 successEmbed(
                     `Giveaway Started! 🎉`,
-                    `A new giveaway for **${prizeName}** has been started in ${targetChannel} and will end in **${durationString}**.`,
+                    `Comenzó un sorteo de **${prizeName}** en ${targetChannel}; terminará en **${durationString}**.`,
                 ),
             ],
             flags: MessageFlags.Ephemeral,

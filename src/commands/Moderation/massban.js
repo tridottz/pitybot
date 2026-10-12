@@ -3,28 +3,28 @@ import { createEmbed, successEmbed, warningEmbed } from '../../utils/embeds.js';
 import { logModerationAction } from '../../utils/moderation.js';
 import { logger } from '../../utils/logger.js';
 import { ModerationService } from '../../services/moderation/moderationService.js';
-import { TitanBotError, replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { TitanBotError, replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
-        .setName("banear-varios")
-        .setDescription("Ban multiple users from the server at once")
+        .setName("massban")
+        .setDescription("Banea a varios usuarios del servidor a la vez")
         .addStringOption(option =>
             option
                 .setName("users")
-                .setDescription("Usar IDs or mentions to ban (separated by spaces or commas)")
+                .setDescription("IDs o menciones de los usuarios que quieres banear (separados por espacios o comas)")
                 .setRequired(true)
         )
         .addStringOption(option =>
             option.setName("reason")
-                .setDescription("Reason for the mass ban")
+                .setDescription("Motivo del baneo masivo")
                 .setRequired(false)
         )
         .addIntegerOption(option =>
             option
                 .setName("delete_days")
-                .setDescription("Number of days of messages to delete (0-7)")
+                .setDescription("Número de días de mensajes que se eliminarán (0-7)")
                 .setMinValue(0)
                 .setMaxValue(7)
                 .setRequired(false)
@@ -34,7 +34,7 @@ export default {
     abuseProtection: { maxAttempts: 3, windowMs: 60_000 },
 
     async execute(interaction, config, client) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction);
+        const deferSuccess = await InteractionHelper.safeDefer(interaction);
         if (!deferSuccess) {
             logger.warn(`Massban interaction defer failed`, {
                 userId: interaction.user.id,
@@ -45,7 +45,7 @@ export default {
         }
 
         const usersInput = interaction.options.getString("users");
-        const reason = interaction.options.getString("reason") || "Mass ban - No se proporcionó un motivo";
+        const reason = interaction.options.getString("reason") || "Mass ban - No reason provided";
         const deleteDays = interaction.options.getInteger("delete_days") || 0;
 
         try {
@@ -56,15 +56,15 @@ export default {
 .slice(0, 20);
 
             if (userIds.length === 0) {
-                return await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please provide valid user IDs or mentions. Maximum 20 users at once.' });
+                return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Proporciona IDs o menciones de usuario válidos. Puedes incluir hasta 20 usuarios a la vez.' });
             }
 
             if (userIds.includes(interaction.user.id)) {
-                return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'You cannot include yourself in a mass ban.' });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'No puedes incluirte en un baneo masivo.' });
             }
 
             if (userIds.includes(client.user.id)) {
-                return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'You cannot include the bot in a mass ban.' });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'No puedes incluir al bot en un baneo masivo.' });
             }
 
             const results = {
@@ -78,7 +78,7 @@ export default {
                     const user = await client.users.fetch(userId).catch(() => null);
                     
                     if (!user) {
-                        results.failed.push({ userId, reason: "Usar not found" });
+                        results.failed.push({ userId, reason: "User not found" });
                         continue;
                     }
 
@@ -120,7 +120,7 @@ export default {
                         client,
                         guild: interaction.guild,
                         event: {
-                            action: "Member Baneado",
+                            action: "Member Banned",
                             target: `${user.tag} (${user.id})`,
                             executor: `${interaction.user.tag} (${interaction.user.id})`,
                             reason: `${reason} (Mass Ban)`,
@@ -148,7 +148,7 @@ export default {
             let description = `**Mass Ban Results:**\n\n`;
             
             if (results.successful.length > 0) {
-                description += `✅ **Successfully Baneado (${results.successful.length}):**\n`;
+                description += `✅ **Vetados correctamente (${results.successful.length}):**\n`;
                 results.successful.forEach(result => {
                     description += `• ${result.user} (${result.userId})\n`;
                 });
@@ -172,7 +172,7 @@ export default {
 
             const embed = results.successful.length > 0 ? successEmbed : warningEmbed;
             
-            return await InteractionAyudaer.safeEditReply(interaction, {
+            return await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     embed(
                         `🔨 Mass Ban Completed`,
@@ -183,7 +183,7 @@ export default {
 
         } catch (error) {
             logger.error("Error in massban command:", error);
-            return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while processing the mass ban. Please try again later.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al procesar el baneo masivo. Inténtalo de nuevo más tarde.' });
         }
     }
 };

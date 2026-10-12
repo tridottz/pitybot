@@ -1,7 +1,7 @@
 import { Events } from 'discord.js';
-import { logEvent, EVENT_TYPES } from '../services/registrosService.js';
+import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
 import { logger } from '../utils/logger.js';
-import { formatLogLine } from '../utils/registros/logEmbeds.js';
+import { formatLogLine } from '../utils/logging/logEmbeds.js';
 
 const MAX_LOGGED_EDIT_CONTENT_LENGTH = 512;
 
@@ -36,7 +36,7 @@ export default {
         guildId: newMessage.guild.id,
         eventType: EVENT_TYPES.MESSAGE_EDIT,
         data: {
-          title: 'Message edited',
+          title: 'Mensaje editado',
           lines: metaLines,
           quoted: true,
           fields: [

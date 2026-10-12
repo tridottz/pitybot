@@ -1,81 +1,81 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } from 'discord.js';
 import { logger } from '../../utils/logger.js';
 import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
-import { checkUsarPermissions } from '../../utils/permissionGuard.js';
-import { setUsarLevel, getLevelingConfig } from '../../services/niveling/niveling.js';
+import { checkUserPermissions } from '../../utils/permissionGuard.js';
+import { setUserLevel, getLevelingConfig } from '../../services/leveling/leveling.js';
 import { createEmbed } from '../../utils/embeds.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
   data: new SlashCommandBuilder()
-    .setName('ajustar-nivel')
-    .setDescription("Set a user's level to a specific value")
-    .addUsarOption((option) =>
+    .setName('levelset')
+    .setDescription("Establece el nivel de un usuario en un valor específico")
+    .addUserOption((option) =>
       option
         .setName('user')
-        .setDescription('The user to set the level for')
+        .setDescription('Usuario cuyo nivel quieres establecer')
         .setRequired(true)
     )
     .addIntegerOption((option) =>
       option
         .setName('level')
-        .setDescription('The level to set')
+        .setDescription('Nivel que quieres establecer')
         .setRequired(true)
         .setMinValue(0)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setDMPermission(false),
-  category: 'Leveling',
+  category: 'Niveles',
 
   async execute(interaction, config, client) {
-    await InteractionAyudaer.safeDefer(interaction);
+    await InteractionHelper.safeDefer(interaction);
 
-    const hasPermission = await checkUsarPermissions(
+    const hasPermission = await checkUserPermissions(
       interaction,
       PermissionFlagsBits.ManageGuild,
-      'You need ManageGuild permission to use this command.'
+      'Necesitas el permiso **Administrar servidor** para usar este comando.'
     );
     if (!hasPermission) return;
 
     const levelingConfig = await getLevelingConfig(client, interaction.guildId);
     if (!levelingConfig?.enabled) {
-      await InteractionAyudaer.safeEditReply(interaction, {
+      await InteractionHelper.safeEditReply(interaction, {
         embeds: [
           new EmbedBuilder()
             .setColor('#f1c40f')
-            .setDescription('The leveling system is currently disabled on this server.')
+            .setDescription('El sistema de niveles está desactivado en este servidor.')
         ],
         flags: MessageFlags.Ephemeral
       });
       return;
     }
 
-    const targetUsar = interaction.options.getUsar('user');
+    const targetUser = interaction.options.getUser('user');
     const newLevel = interaction.options.getInteger('level');
 
-    const member = await interaction.guild.members.fetch(targetUsar.id).catch(() => null);
+    const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
     if (!member) {
       throw new TitanBotError(
-        `Usar ${targetUsar.id} not found in this guild`,
+        `User ${targetUser.id} not found in this guild`,
         ErrorTypes.USER_INPUT,
         'The specified user is not in this server.'
       );
     }
 
-    const userData = await setUsarLevel(client, interaction.guildId, targetUsar.id, newLevel);
+    const userData = await setUserLevel(client, interaction.guildId, targetUser.id, newLevel);
 
-    await InteractionAyudaer.safeEditReply(interaction, {
+    await InteractionHelper.safeEditReply(interaction, {
       embeds: [
         createEmbed({
-          title: 'Level Set',
-          description: `Successfully set ${targetUsar.tag}'s level to **${newLevel}**.\n**Total XP:** ${userData.totalXp}`,
+          title: 'Nivel establecido',
+          description: `Se estableció el nivel de ${targetUser.tag} en **${newLevel}**.\n**XP total:** ${userData.totalXp}`,
           color: 'success'
         })
       ]
     });
 
     logger.info(
-      `[ADMIN] Usar ${interaction.user.tag} set ${targetUsar.tag}'s level to ${newLevel} in guild ${interaction.guildId}`
+      `[ADMIN] User ${interaction.user.tag} set ${targetUser.tag}'s level to ${newLevel} in guild ${interaction.guildId}`
     );
   }
 };

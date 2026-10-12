@@ -2,16 +2,16 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } fro
 import { successEmbed } from '../utils/embeds.js';
 import { logger } from '../utils/logger.js';
 
-import { replyUsarError, ErrorTypes } from '../utils/errorHandler.js';
+import { replyUserError, ErrorTypes } from '../utils/errorHandler.js';
 function createControlButtons(countdownId, isPaused = false) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId(`countdown_pause:${countdownId}`)
-            .setLabel(isPaused ? "▶️ Resume" : "⏸️ Pause")
+            .setLabel(isPaused ? "▶️ Reanudar" : "⏸️ Pausar")
             .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId(`countdown_cancel:${countdownId}`)
-            .setLabel("❌ Cancel")
+            .setLabel("❌ Cancelar")
             .setStyle(ButtonStyle.Danger),
     );
 }
@@ -101,21 +101,21 @@ function cleanupCountdown(countdownId, activeCountdowns) {
 
 async function countdownButtonHandler(interaction, client, args) {
     try {
-        const { activeCountdowns } = await import('../comandos/Tools/contardown.js');
+        const { activeCountdowns } = await import('../commands/Tools/countdown.js');
         const action = args[0];
         const countdownId = args[1];
 
         const countdownData = activeCountdowns.get(countdownId);
         if (!countdownData) {
             return await interaction.reply({
-                content: "This countdown has expired or was cancelled.",
+                content: "Esta cuenta regresiva terminó o se canceló.",
                 flags: ["Ephemeral"],
             });
         }
 
         if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
             return await interaction.reply({
-                content: 'You need the "Manage Messages" permission to control countdowns.',
+                content: 'Necesitas el permiso "Gestionar mensajes" para controlar cuentas regresivas.',
                 flags: ["Ephemeral"],
             });
         }
@@ -134,7 +134,7 @@ async function countdownButtonHandler(interaction, client, args) {
                     });
 
                     await interaction.reply({
-                        content: "▶️ Countdown resumed!",
+                        content: "▶️ ¡Cuenta regresiva reanudada!",
                         flags: ["Ephemeral"],
                     });
                 } else {
@@ -149,7 +149,7 @@ async function countdownButtonHandler(interaction, client, args) {
                     });
 
                     await interaction.reply({
-                        content: "⏸️ Countdown paused!",
+                        content: "⏸️ ¡Cuenta regresiva en pausa!",
                         flags: ["Ephemeral"],
                     });
                 }
@@ -171,7 +171,7 @@ async function countdownButtonHandler(interaction, client, args) {
                 cleanupCountdown(countdownId, activeCountdowns);
 
                 await interaction.reply({
-                    content: "❌ Countdown cancelled!",
+                    content: "❌ ¡Cuenta regresiva cancelada!",
                     flags: ["Ephemeral"],
                 });
                 break;
@@ -180,7 +180,7 @@ async function countdownButtonHandler(interaction, client, args) {
         logger.error('Countdown button handler error:', error);
         try {
             if (!interaction.replied && !interaction.deferred) {
-                await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred controlling the countdown.' });
+                await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al controlar la cuenta regresiva.' });
             }
         } catch (err) {
             logger.error('Failed to send error message:', err);

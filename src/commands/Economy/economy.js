@@ -1,13 +1,13 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { logger } from '../../utils/logger.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import economyDashboard from './modules/economia_dashboard.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import economyDashboard from './modules/economy_dashboard.js';
 
 export default {
     slashOnly: true,
     data: new SlashCommandBuilder()
-        .setName('economia')
-        .setDescription('Comandos para administrar la economía')
+        .setName('economy')
+        .setDescription('Comandos de administración de la economía')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .setDMPermission(false)
         .addSubcommand(subcommand =>
@@ -18,7 +18,7 @@ export default {
     category: 'Economy',
 
     async execute(interaction, config, client) {
-        const deferred = await InteractionAyudaer.safeDefer(interaction, {
+        const deferred = await InteractionHelper.safeDefer(interaction, {
             flags: MessageFlags.Ephemeral,
         });
         if (!deferred) return;

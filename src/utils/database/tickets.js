@@ -13,7 +13,7 @@ export async function getTicketData(guildId, channelId) {
     return await db.get(key);
 }
 
-export async function getOpenTicketCountForUsar(guildId, userId) {
+export async function getOpenTicketCountForUser(guildId, userId) {
     try {
         if (!db.initialized) {
             await db.initialize();

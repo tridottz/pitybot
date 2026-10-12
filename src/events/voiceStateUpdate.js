@@ -8,7 +8,7 @@ import {
 } from '../utils/database.js';
 import { sanitizeInput } from '../utils/validation.js';
 import { logger } from '../utils/logger.js';
-import { handleMusicVoiceState } from '../services/musica/musicaVoiceState.js';
+import { handleMusicVoiceState } from '../services/music/musicVoiceState.js';
 
 const channelCreationCooldown = new Map();
 const VOICE_CREATE_COOLDOWN_MS = 2000;
@@ -63,7 +63,7 @@ export default {
             if (channelCreationCooldown.has(cooldownKey)) {
                 const lastCreation = channelCreationCooldown.get(cooldownKey);
 if (now - lastCreation < VOICE_CREATE_COOLDOWN_MS) {
-                    logger.warn(`Usar ${member.id} is on cooldown for channel creation`);
+                    logger.warn(`User ${member.id} is on cooldown for channel creation`);
                     return;
                 }
             }
@@ -231,7 +231,7 @@ userLimit: userLimit === 0 ? undefined : userLimit,
                 
                 try {
                     await member.send({
-                        content: `❌ Failed to create your temporary voice channel. Please contact a server administrator.`
+                        content: `❌ No se pudo crear tu canal de voz temporal. Contacta a un administrador del servidor.`
                     });
                 } catch (dmError) {
                     logger.debug(`Unable to send temporary channel failure DM to user ${member.id}:`, dmError);

@@ -1,13 +1,13 @@
 import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 import { getColor } from '../../config/bot.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('usuario-aleatorio')
+        .setName('randomuser')
         .setDescription('Selecciona un usuario aleatorio del servidor')
         .addRoleOption(option =>
             option.setName('role')
@@ -15,21 +15,21 @@ export default {
                 .setRequired(false))
         .addBooleanOption(option =>
             option.setName('bots')
-                .setDescription('Incluir bots en la selección (predeterminado: falso)')
+                .setDescription('Incluir bots en la selección (predeterminado: no)')
                 .setRequired(false))
         .addBooleanOption(option =>
             option.setName('online')
-                .setDescription('Seleccionar solo usuarios conectados (predeterminado: falso)')
+                .setDescription('Seleccionar solo entre usuarios conectados (predeterminado: no)')
                 .setRequired(false))
         .addBooleanOption(option =>
             option.setName('mention')
-                .setDescription('Mencionar al usuario seleccionado (predeterminado: falso)')
+                .setDescription('Mencionar al usuario seleccionado (predeterminado: no)')
                 .setRequired(false)),
 
     async execute(interaction) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction);
+        const deferSuccess = await InteractionHelper.safeDefer(interaction);
         if (!deferSuccess) {
-            logger.warn(`RandomUsar interaction defer failed`, {
+            logger.warn(`RandomUser interaction defer failed`, {
                 userId: interaction.user.id,
                 guildId: interaction.guildId,
                 commandName: 'randomuser'
@@ -38,9 +38,9 @@ export default {
         }
 
         if (!interaction.guild) {
-            return replyUsarError(interaction, {
+            return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: 'This command can only be used in a server/guild.',
+                message: 'Este comando solo se puede usar en un servidor.',
             });
         }
 
@@ -66,12 +66,12 @@ export default {
         }
 
         if (memberArray.length === 0) {
-            let errorMessage = 'Could not find any users matching your filters:';
+            let errorMessage = 'No se encontraron usuarios que coincidan con tus filtros:';
             if (role) errorMessage = `No users have the **${role.name}** role.`;
             if (onlineOnly) errorMessage = 'No users are currently online.';
             if (role && onlineOnly) errorMessage = `No **${role.name}** members are online.`;
 
-            return replyUsarError(interaction, {
+            return replyUserError(interaction, {
                 type: ErrorTypes.USER_INPUT,
                 message: errorMessage + '\n\nTry adjusting your filters.',
             });
@@ -89,13 +89,13 @@ export default {
             .slice(0, 10);
 
         const embed = successEmbed(
-            '🎲 Random Usar Selected',
+            '🎲 Random User Selected',
             shouldMention ? `${selectedMember}` : `**${user.username}**`
         )
         .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 256 }))
         .addFields(
-            { name: 'Usarname', value: user.username, inline: true },
-            { name: 'Bot', value: user.bot ? 'Yes' : 'No', inline: true },
+            { name: 'Nombre de usuario', value: user.username, inline: true },
+            { name: 'Bot', value: user.bot ? 'Sí' : 'No', inline: true },
             { name: `Roles (${roles.length})`, value: roles.length > 0 ? roles.slice(0, 5).join('') + (roles.length > 5 ? `+${roles.length - 5} more` : '') : 'No roles', inline: false }
         )
         .setColor('primary');
@@ -104,12 +104,12 @@ export default {
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId(`randomuser_${interaction.user.id}_again`)
-                    .setLabel('🎲 Pick Another Usar')
+                    .setLabel('🎲 Elegir otro usuario')
                     .setStyle(ButtonStyle.Primary)
             );
 
         const response = await interaction.editReply({
-            content: shouldMention ? `${selectedMember}, you've been chosen!` : null,
+            content: shouldMention ? `${selectedMember}, ¡fuiste seleccionado!` : null,
             embeds: [embed],
             components: [row],
             allowedMentions: { users: shouldMention ? [user.id] : [] }
@@ -137,16 +137,16 @@ export default {
                 }
 
                 if (newMemberArray.length === 0) {
-                    await replyUsarError(i, {
+                    await replyUserError(i, {
                         type: ErrorTypes.USER_INPUT,
-                        message: 'No users found matching the criteria.',
+                        message: 'No se encontraron usuarios que cumplan los criterios.',
                     });
                     return;
                 }
 
                 const newRandomIndex = Math.floor(Math.random() * newMemberArray.length);
                 const newSelectedMember = newMemberArray[newRandomIndex];
-                const newUsar = newSelectedMember.user;
+                const newUser = newSelectedMember.user;
 
                 const newRoles = newSelectedMember.roles.cache
                     .filter(r => r.id !== interaction.guild.id)
@@ -155,28 +155,28 @@ export default {
                     .slice(0, 10);
 
                 const newEmbed = successEmbed(
-                    '🎲 Random Usar Selected',
-                    shouldMention ? `${newSelectedMember}` : `**${newUsar.username}**`
+                    '🎲 Random User Selected',
+                    shouldMention ? `${newSelectedMember}` : `**${newUser.username}**`
                 )
-                .setThumbnail(newUsar.displayAvatarURL({ dynamic: true, size: 256 }))
+                .setThumbnail(newUser.displayAvatarURL({ dynamic: true, size: 256 }))
                 .addFields(
-                    { name: 'Usarname', value: newUsar.username, inline: true },
-                    { name: 'Bot', value: newUsar.bot ? 'Yes' : 'No', inline: true },
+                    { name: 'Username', value: newUser.username, inline: true },
+                    { name: 'Bot', value: newUser.bot ? 'Yes' : 'No', inline: true },
                     { name: `Roles (${newRoles.length})`, value: newRoles.length > 0 ? newRoles.slice(0, 5).join('') + (newRoles.length > 5 ? `+${newRoles.length - 5} more` : '') : 'No roles', inline: false }
                 )
                 .setColor(newSelectedMember.displayHexColor || '#3498db');
 
                 await i.update({
-                    content: shouldMention ? `${newSelectedMember}, you've been chosen!` : null,
+                    content: shouldMention ? `${newSelectedMember}, ¡fuiste seleccionado!` : null,
                     embeds: [newEmbed],
                     components: [row],
-                    allowedMentions: { users: shouldMention ? [newUsar.id] : [] }
+                    allowedMentions: { users: shouldMention ? [newUser.id] : [] }
                 });
 
             } catch (error) {
                 logger.error('Button interaction error:', error);
                 await i.reply({
-                    content: 'An error occurred while selecting another user.',
+                    content: 'Ocurrió un error al elegir otro usuario.',
                     flags: ['Ephemeral']
                 });
             }

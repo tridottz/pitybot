@@ -2,7 +2,7 @@ import {
   sharedTodoAddModalHandler,
   sharedTodoCompleteModalHandler,
   sharedTodoRemoveModalHandler,
-} from '../../../handlers/pendientesButtons.js';
+} from '../../../handlers/todoButtons.js';
 
 export default [
   sharedTodoAddModalHandler,

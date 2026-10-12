@@ -1,6 +1,6 @@
 import { createEmbed } from '../../utils/embeds.js';
-import { createAllCommandsMenu } from './ayudaSelectMenus.js';
-import { createInitialAyudaMenu } from '../../comandos/Core/ayuda.js';
+import { createAllCommandsMenu } from './helpSelectMenus.js';
+import { createInitialHelpMenu } from '../../commands/Core/help.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import { logger } from '../../utils/logger.js';
 
@@ -16,14 +16,14 @@ export const helpBackButton = {
                 await interaction.deferUpdate();
             }
 
-            const { embeds, components } = await createInitialAyudaMenu(client);
+            const { embeds, components } = await createInitialHelpMenu(client);
             await interaction.editReply({
                 embeds,
                 components,
             });
         } catch (error) {
             if (error?.code === 40060 || error?.code === 10062) {
-                logger.warn('Ayuda back button interaction already acknowledged or expired.', {
+                logger.warn('Help back button interaction already acknowledged or expired.', {
                     event: 'interaction.help.button.unavailable',
                     errorCode: String(error.code),
                     customId: interaction.customId,
@@ -41,25 +41,25 @@ export const helpBugReportButton = {
     name: BUG_REPORT_BUTTON_ID,
     async execute(interaction, client) {
         const githubButton = new ButtonBuilder()
-            .setLabel('🐛 Reportar error on GitHub')
+            .setLabel('🐛 Reportar un error en GitHub')
             .setStyle(ButtonStyle.Link)
             .setURL('https://github.com/codebymitch/TitanBot/issues');
 
         const bugRow = new ActionRowBuilder().addComponents(githubButton);
 
         const bugReportEmbed = createEmbed({
-            title: '🐛 Bug Report',
-            description: 'Found a bug? Please report it on our GitHub Issues page!\n\n' +
-                '**When reporting a bug, please include:**\n' +
-                '• 📝 Detailed description of the issue\n' +
-                '• 📋 Steps to reproduce the problem\n' +
-                '• 📸 Screenshots if applicable\n' +
-                '• 💻 Your bot version and environment\n\n' +
-                'This helps us fix issues faster and more effectively!',
+            title: '🐛 Reportar un error',
+            description: '¿Encontraste un error? Repórtalo en la página de incidencias de GitHub.\n\n' +
+                '**Al reportar un error, incluye:**\n' +
+                '• 📝 Una descripción detallada del problema\n' +
+                '• 📋 Los pasos para reproducirlo\n' +
+                '• 📸 Capturas de pantalla, si corresponde\n' +
+                '• 💻 La versión del bot y el entorno\n\n' +
+                'Esto nos ayuda a corregir los problemas más rápido y mejor.',
             color: 'error'
         });
         bugReportEmbed.setFooter({
-            text: 'TitanBot Bug Reporting System',
+            text: 'Sistema de reporte de errores de TitanBot',
             iconURL: client.user.displayAvatarURL()
         });
         bugReportEmbed.setTimestamp();
@@ -77,7 +77,7 @@ function getPaginationInfo(components) {
         for (const component of row.components || []) {
             if (component.customId === `${PAGINATION_PREFIX}_page`) {
                 const label = component.label || '';
-                const match = label.match(/Page\s+(\d+)\s+of\s+(\d+)/i);
+                const match = label.match(/P(?:age|ágina)\s+(\d+)\s+(?:of|de)\s+(\d+)/i);
                 if (match) {
                     return {
                         currentPage: Number(match[1]),
@@ -124,7 +124,7 @@ export const helpPaginationButton = {
             await interaction.editReply({ embeds, components });
         } catch (error) {
             if (error?.code === 40060 || error?.code === 10062) {
-                logger.warn('Ayuda pagination interaction already acknowledged or expired.', {
+                logger.warn('Help pagination interaction already acknowledged or expired.', {
                     event: 'interaction.help.pagination.unavailable',
                     errorCode: String(error.code),
                     customId: interaction.customId,

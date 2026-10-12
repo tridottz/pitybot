@@ -102,7 +102,7 @@ export async function reconcileVerificationPanels(client) {
             } else if (panelStatus.reason === 'panel_deleted') {
                 summary.deletedPanels += 1;
                 logger.warn(
-                    `Verification panel deleted for guild ${guild.id} (${guild.name}) — repost from /verificacion dashboard`,
+                    `Verification panel deleted for guild ${guild.id} (${guild.name}) — repost from /verification dashboard`,
                 );
             }
         } catch (error) {
@@ -153,7 +153,7 @@ export async function reconcileReactionRolePanelHealth(client) {
                 } else if (panelStatus.reason === 'panel_deleted') {
                     summary.deletedPanels += 1;
                     logger.warn(
-                        `Reaction role panel deleted for guild ${guild.id} — repost from /roles-reaccion dashboard`,
+                        `Reaction role panel deleted for guild ${guild.id} — repost from /reactroles dashboard`,
                     );
                 }
             }

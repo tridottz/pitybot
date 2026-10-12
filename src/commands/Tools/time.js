@@ -1,19 +1,19 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
-        .setName('hora')
-        .setDescription('Muestra la hora actual en distintas zonas horarias')
+        .setName('time')
+        .setDescription('Consulta la hora actual en distintas zonas horarias')
         .addStringOption(option =>
             option.setName('timezone')
-                .setDescription('La zona horaria que quieres mostrar (por ejemplo, UTC, America/Mexico_City)')
+                .setDescription('Zona horaria que quieres consultar (por ejemplo, UTC o America/Mexico_City)')
                 .setRequired(false)),
 
     async execute(interaction) {
-        await InteractionAyudaer.safeExecute(
+        await InteractionHelper.safeExecute(
             interaction,
             async () => {
                 const timezone = interaction.options.getString('timezone') || 'UTC';
@@ -33,9 +33,9 @@ export default {
                     });
                 } catch (error) {
                     logger.warn(`Invalid timezone requested: ${timezone}`);
-                    await replyUsarError(interaction, {
+                    await replyUserError(interaction, {
                         type: ErrorTypes.VALIDATION,
-                        message: 'Invalid timezone. Please use a valid timezone identifier (e.g., UTC, America/New_York, Europe/London)',
+                        message: 'La zona horaria no es válida. Usa un identificador válido (por ejemplo: UTC, America/Mexico_City, Europe/Madrid).',
                     });
                     return;
                 }
@@ -50,9 +50,9 @@ export default {
                     `**ISO String:** \`${now.toISOString()}\``
                 );
 
-                await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+                await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
             },
-            'Failed to get current time. Please try again.',
+            'No se pudo obtener la hora actual. Inténtalo de nuevo.',
             {
                 autoDefer: true,
                 deferOptions: { flags: MessageFlags.Ephemeral }

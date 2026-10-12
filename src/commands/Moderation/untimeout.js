@@ -3,23 +3,23 @@ import { successEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 import { ModerationService } from '../../services/moderation/moderationService.js';
 import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("quitar-silencio")
-        .setDescription("Remove timeout from a user")
-        .addUsarOption((option) =>
+        .setName("untimeout")
+        .setDescription("Quita el tiempo de espera de un usuario")
+        .addUserOption((option) =>
             option
                 .setName("target")
-                .setDescription("Usar to untimeout")
+                .setDescription("Usuario al que quieres quitar el tiempo de espera")
                 .setRequired(true),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
     category: "moderation",
 
     async execute(interaction, config, client) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction);
+        const deferSuccess = await InteractionHelper.safeDefer(interaction);
         if (!deferSuccess) {
             logger.warn(`Untimeout interaction defer failed`, {
                 userId: interaction.user.id,
@@ -29,14 +29,14 @@ export default {
             return;
         }
 
-        const targetUsar = interaction.options.getUsar("target");
+        const targetUser = interaction.options.getUser("target");
         const member = interaction.options.getMember("target");
 
-        if (!targetUsar) {
+        if (!targetUser) {
             throw new TitanBotError(
-                'Falta el usuario de destino',
+                'Missing target user',
                 ErrorTypes.USER_INPUT,
-                'You must specify a user to untimeout.',
+                'Debes indicar un usuario para quitar el tiempo de espera.',
                 { subtype: 'invalid_user' },
             );
         }
@@ -49,16 +49,16 @@ export default {
             );
         }
 
-        await ModerationService.removeTimeoutUsar({
+        await ModerationService.removeTimeoutUser({
             guild: interaction.guild,
             member,
             moderator: interaction.member,
         });
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
-                    `🔓 **Removed timeout** from ${targetUsar.tag}`,
+                    `🔓 **Removed timeout** from ${targetUser.tag}`,
                 ),
             ],
         });

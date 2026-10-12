@@ -1,12 +1,12 @@
 import { EmbedBuilder } from 'discord.js';
-import { getAllBirthdays } from '../../../services/cumpleanosService.js';
+import { getAllBirthdays } from '../../../services/birthdayService.js';
 import { deleteBirthday } from '../../../utils/database.js';
 import { logger } from '../../../utils/logger.js';
 
-import { InteractionAyudaer } from '../../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../../utils/interactionHelper.js';
 export default {
     async execute(interaction, config, client) {
-        await InteractionAyudaer.safeDefer(interaction);
+        await InteractionHelper.safeDefer(interaction);
 
         const guildId = interaction.guildId;
 
@@ -17,7 +17,7 @@ export default {
                 .setColor(0xFF0000)
                 .setTitle('Sin cumpleaños')
                 .setDescription('Aún no se ha establecido ningún cumpleaños en este servidor.');
-            return await InteractionAyudaer.safeEditReply(interaction, {
+            return await InteractionHelper.safeEditReply(interaction, {
                 embeds: [embed]
             });
         }
@@ -27,19 +27,19 @@ export default {
 
         let birthdayList = '';
         let displayIndex = 0;
-        const staleUsarIds = [];
+        const staleUserIds = [];
 
         for (const birthday of sortedBirthdays) {
             if (fetchedMembers && !fetchedMembers.has(birthday.userId)) {
-                staleUsarIds.push(birthday.userId);
+                staleUserIds.push(birthday.userId);
                 continue;
             }
             displayIndex++;
             birthdayList += `${displayIndex}. <@${birthday.userId}> - ${birthday.monthName} ${birthday.day}\n`;
         }
 
-        if (fetchedMembers && staleUsarIds.length > 0) {
-            for (const userId of staleUsarIds) {
+        if (fetchedMembers && staleUserIds.length > 0) {
+            for (const userId of staleUserIds) {
                 deleteBirthday(client, guildId, userId).catch(() => null);
             }
         }
@@ -49,7 +49,7 @@ export default {
                 .setColor(0xFF0000)
                 .setTitle('Sin cumpleaños')
                 .setDescription('Ningún miembro actual del servidor ha establecido su cumpleaños.');
-            return await InteractionAyudaer.safeEditReply(interaction, {
+            return await InteractionHelper.safeEditReply(interaction, {
                 embeds: [embed]
             });
         }
@@ -61,7 +61,7 @@ export default {
             .setTitle('Cumpleaños del servidor')
             .setDescription(`${birthdayList}\n\nTotal: ${displayIndex} cumpleaños`);
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [embed]
         });
 
@@ -69,7 +69,7 @@ export default {
             userId: interaction.user.id,
             guildId,
             birthdayCount: displayIndex,
-            staleRemoved: staleUsarIds.length,
+            staleRemoved: staleUserIds.length,
             commandName: 'birthday_list'
         });
     }

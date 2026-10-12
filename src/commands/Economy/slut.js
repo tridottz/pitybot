@@ -1,9 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
-import { getEconomyData, setEconomyData } from '../../utils/economia.js';
+import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
 import { logger } from '../../utils/logger.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 const SLUT_COOLDOWN = 45 * 60 * 1000;
 
@@ -16,9 +16,9 @@ const SLUT_ACTIVITIES = [
 ];
 
 const POSITIVE_OUTCOMES = [
-    "Your stream blew up and tips poured in.",
+    "Tu transmisión se volvió viral y recibiste muchas propinas.",
     "A VIP booking paid far above average.",
-    "Your after-hours shift was packed and profitable.",
+    "Tu turno nocturno estuvo lleno y fue rentable.",
     "Premium requests came through and your payout jumped.",
 ];
 
@@ -103,11 +103,11 @@ function resolveOutcome(activity, wallet) {
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('ligar')
-        .setDescription('Acepta un trabajo arriesgado para obtener una ganancia o sufrir una pérdida aleatoria'),
+        .setName('slut')
+        .setDescription('Acepta un trabajo arriesgado con una ganancia o pérdida aleatoria'),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionAyudaer.safeDefer(interaction);
+        const deferred = await InteractionHelper.safeDefer(interaction);
         if (!deferred) return;
 
             const userId = interaction.user.id;
@@ -122,7 +122,7 @@ export default {
                 throw createError(
                     "Failed to load economy data for slut command",
                     ErrorTypes.DATABASE,
-                    "Failed to load your economy data. Please try again later.",
+                    "No se pudieron cargar tus datos de economía. Inténtalo más tarde.",
                     { userId, guildId }
                 );
             }
@@ -134,7 +134,7 @@ export default {
                 throw createError(
                     "Slut cooldown active",
                     ErrorTypes.RATE_LIMIT,
-                    `You need to wait before you can work again! Try again in **${Math.ceil(remainingTime / 60000)}** minutes.`,
+                    `¡Debes esperar antes de volver a trabajar! Inténtalo en **${Math.ceil(remainingTime / 60000)}** minutos.`,
                     { timeRemaining: remainingTime, cooldownType: 'slut' }
                 );
             }
@@ -183,6 +183,6 @@ export default {
                 timestamp: true
             });
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
     }, { command: 'slut' })
 };

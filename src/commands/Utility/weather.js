@@ -1,24 +1,24 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/buscar";
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
 const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("clima")
-        .setDescription("Muestra el clima en tiempo real de una ubicación")
+        .setName("weather")
+        .setDescription("Consulta el clima en tiempo real de una ubicación")
         .addStringOption((option) =>
             option
                 .setName("city")
-                .setDescription("El nombre de la ciudad, por ejemplo, «Ciudad de México» o «Tokio»")
+                .setDescription("Nombre de la ciudad, por ejemplo, «Ciudad de México» o «Madrid»")
                 .setRequired(true),
         ),
 
     async execute(interaction) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction);
+        const deferSuccess = await InteractionHelper.safeDefer(interaction);
         if (!deferSuccess) {
             logger.warn(`Weather interaction defer failed`, {
                 userId: interaction.user.id,
@@ -41,7 +41,7 @@ export default {
                 city: city,
                 guildId: interaction.guildId
             });
-            await replyUsarError(interaction, { type: ErrorTypes.USER_INPUT, message: `Could not find a location for **${city}**. Please check the spelling.` });
+            await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `No se encontró la ubicación **${city}**. Revisa que esté bien escrita.` });
             return;
         }
 
@@ -60,7 +60,7 @@ export default {
                 userId: interaction.user.id,
                 guildId: interaction.guildId
             });
-            await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'A weather service error occurred.' });
+            await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error con el servicio meteorológico.' });
             return;
         }
 
@@ -72,7 +72,7 @@ export default {
 
         const condition = getWeatherDescription(weatherCode);
 
-        const embed = createEmbed({ title: `Weather in ${cityDisplay}, ${country}`, description: condition.description })
+        const embed = createEmbed({ title: `Clima en ${cityDisplay}, ${country}`, description: condition.description })
             .addFields(
                 {
                     name: "Temperature",
@@ -94,7 +94,7 @@ export default {
                 text: `Latitude: ${latitude.toFixed(2)} | Longitude: ${longitude.toFixed(2)}`,
             });
 
-        await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+        await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
         logger.info(`Weather command executed`, {
             userId: interaction.user.id,
             city: cityDisplay,
@@ -107,17 +107,17 @@ export default {
 
 function getWeatherDescription(code) {
     if (code >= 0 && code <= 3) {
-        return { description: "Clear sky / Partly cloudy", emoji: "" };
+        return { description: "Cielo despejado / Parcialmente nublado", emoji: "" };
     } else if (code >= 45 && code <= 48) {
-        return { description: "Fog and Rime fog", emoji: "" };
+        return { description: "Niebla", emoji: "" };
     } else if (code >= 51 && code <= 67) {
-        return { description: "Drizzle or Rain", emoji: "" };
+        return { description: "Llovizna o lluvia", emoji: "" };
     } else if (code >= 71 && code <= 75) {
-        return { description: "Snow fall", emoji: "" };
+        return { description: "Nevadas", emoji: "" };
     } else if (code >= 80 && code <= 86) {
         return { description: "Showers (Rain/Snow)", emoji: "" };
     } else if (code >= 95 && code <= 99) {
         return { description: "Thunderstorm", emoji: "" };
     }
-    return { description: "Unknown conditions.", emoji: "" };
+    return { description: "Condiciones desconocidas.", emoji: "" };
 }

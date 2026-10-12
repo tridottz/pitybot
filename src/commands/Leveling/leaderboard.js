@@ -1,27 +1,27 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { logger } from '../../utils/logger.js';
 import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
-import { getLeaderboard, getLevelingConfig, getXpForLevel } from '../../services/niveling/niveling.js';
+import { getLeaderboard, getLevelingConfig, getXpForLevel } from '../../services/leveling/leveling.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
   data: new SlashCommandBuilder()
-    .setName('clasificacion')
-    .setDescription("Shows the server's level leaderboard")
+    .setName('leaderboard')
+    .setDescription("Muestra la clasificación de niveles del servidor")
     .setDMPermission(false),
-  category: 'Leveling',
+  category: 'Niveles',
 
   async execute(interaction, config, client) {
-    await InteractionAyudaer.safeDefer(interaction);
+    await InteractionHelper.safeDefer(interaction);
 
     const levelingConfig = await getLevelingConfig(client, interaction.guildId);
 
     if (!levelingConfig?.enabled) {
-      await InteractionAyudaer.safeEditReply(interaction, {
+      await InteractionHelper.safeEditReply(interaction, {
         embeds: [
           new EmbedBuilder()
             .setColor('#f1c40f')
-            .setDescription('The leveling system is currently disabled on this server.')
+            .setDescription('El sistema de niveles está desactivado en este servidor.')
         ],
         flags: MessageFlags.Ephemeral
       });
@@ -34,14 +34,14 @@ export default {
       throw new TitanBotError(
         'No leaderboard data found',
         ErrorTypes.DATABASE,
-        'No level data found yet. Start chatting to gain XP!'
+        'Aún no hay datos de nivel. ¡Participa en el chat para ganar XP!'
       );
     }
 
     const embed = new EmbedBuilder()
-      .setTitle('Level Leaderboard')
+      .setTitle('Clasificación de niveles')
       .setColor('#2ecc71')
-      .setDescription("Top 10 most active members in this server:")
+      .setDescription("Los 10 miembros más activos de este servidor:")
       .setTimestamp();
 
     const leaderboardText = await Promise.all(
@@ -69,7 +69,7 @@ export default {
       value: leaderboardText.join('\n')
     });
 
-    await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+    await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
     logger.debug(`Leaderboard displayed for guild ${interaction.guildId}`);
   }
 };

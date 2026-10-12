@@ -1,8 +1,8 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { successEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { createControlButtons, formatTime, startCountdown } from '../../handlers/cuenta-regresivaButtons.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { createControlButtons, formatTime, startCountdown } from '../../handlers/countdownButtons.js';
 
 const activeCountdowns = new Map();
 
@@ -10,12 +10,12 @@ export { activeCountdowns };
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("cuenta-regresiva")
+        .setName("countdown")
         .setDescription("Inicia una cuenta regresiva")
         .addIntegerOption((option) =>
             option
                 .setName("minutes")
-                .setDescription("Cantidad de minutos de la cuenta regresiva (0-1440)")
+                .setDescription("Minutos de la cuenta regresiva (0-1440)")
                 .setMinValue(0)
                 .setMaxValue(1440)
                 .setRequired(false),
@@ -23,7 +23,7 @@ export default {
         .addIntegerOption((option) =>
             option
                 .setName("seconds")
-                .setDescription("Cantidad de segundos de la cuenta regresiva (0-59)")
+                .setDescription("Segundos de la cuenta regresiva (0-59)")
                 .setMinValue(0)
                 .setMaxValue(59)
                 .setRequired(false),
@@ -31,12 +31,12 @@ export default {
         .addStringOption((option) =>
             option
                 .setName("title")
-                .setDescription("Título opcional de la cuenta regresiva")
+                .setDescription("Título opcional para la cuenta regresiva")
                 .setRequired(false),
         ),
 
     async execute(interaction) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction);
+        const deferSuccess = await InteractionHelper.safeDefer(interaction);
         if (!deferSuccess) {
             logger.warn(`Countdown interaction defer failed`, {
                 userId: interaction.user.id,
@@ -88,7 +88,7 @@ export default {
         activeCountdowns.set(countdownId, countdownData);
         startCountdown(countdownId, countdownData, activeCountdowns);
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             content: "✅ Countdown started!",
             flags: MessageFlags.Ephemeral,
         });

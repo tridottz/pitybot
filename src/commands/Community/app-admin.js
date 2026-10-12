@@ -2,7 +2,7 @@ import { SlashCommandBuilder, PermissionFlagsBits, PermissionsBitField, ChannelT
 import { createEmbed, successEmbed } from '../../utils/embeds.js';
 import { getColor, getApplicationStatusColor } from '../../config/bot.js';
 import { logger } from '../../utils/logger.js';
-import { withErrorHandling, createError, ErrorTypes, replyUsarError } from '../../utils/errorHandler.js';
+import { withErrorHandling, createError, ErrorTypes, replyUserError } from '../../utils/errorHandler.js';
 import ApplicationService from '../../services/applicationService.js';
 import { 
     getApplicationSettings, 
@@ -16,7 +16,7 @@ import {
     saveApplicationRoleSettings,
     deleteApplication
 } from '../../utils/database.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 import appDashboard from './modules/app_dashboard.js';
 
 function getApplicationStatusPresentation(statusValue) {
@@ -37,7 +37,7 @@ function getApplicationStatusPresentation(statusValue) {
 
 export default {
     data: new SlashCommandBuilder()
-    .setName("admin-app")
+    .setName("app-admin")
     .setDescription("Administra las postulaciones del staff")
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommand((subcommand) =>
@@ -73,7 +73,7 @@ export default {
             .addStringOption((option) =>
                 option.setName("rol").setDescription("Filtrar por ID de rol"),
             )
-            .addUsarOption((option) =>
+            .addUserOption((option) =>
                 option.setName("usuario").setDescription("Filtrar por usuario"),
             )
             .addNumberOption((option) =>
@@ -103,14 +103,14 @@ export default {
 
     execute: withErrorHandling(async (interaction) => {
         if (!interaction.inGuild()) {
-            return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Este comando solo puede usarse en un servidor.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Este comando solo puede usarse en un servidor.' });
         }
 
         const { options, guild, member } = interaction;
         const subcommand = options.getSubcommand();
 
         if (subcommand !== 'dashboard' && subcommand !== 'establecer') {
-            await InteractionAyudaer.safeDefer(interaction, { flags: ['Ephemeral'] });
+            await InteractionHelper.safeDefer(interaction, { flags: ['Ephemeral'] });
         }
 
         logger.info(`App-admin command executed: ${subcommand}`, {
@@ -137,7 +137,7 @@ export default {
 async function handleSetup(interaction) {
     
     if (interaction.deferred || interaction.replied) {
-        return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Esta interacción ya está en proceso. Por favor, vuelve a usar el comando.' });
+        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Esta interacción ya está en proceso. Por favor, vuelve a usar el comando.' });
     }
 
     const modal = new ModalBuilder()
@@ -220,7 +220,7 @@ async function handleSetup(interaction) {
     const roleId = selectedRoles.first()?.id;
 
     if (!roleId) {
-        await replyUsarError(submitted, { type: ErrorTypes.USER_INPUT, message: 'Debes seleccionar un rol para la postulación.' });
+        await replyUserError(submitted, { type: ErrorTypes.USER_INPUT, message: 'Debes seleccionar un rol para la postulación.' });
         return;
     }
 
@@ -232,13 +232,13 @@ async function handleSetup(interaction) {
 
     const role = await interaction.guild.roles.fetch(roleId).catch(() => null);
     if (!role) {
-        await replyUsarError(submitted, { type: ErrorTypes.VALIDATION, message: 'El rol seleccionado no existe.' });
+        await replyUserError(submitted, { type: ErrorTypes.VALIDATION, message: 'El rol seleccionado no existe.' });
         return;
     }
 
     const existingRoles = await getApplicationRoles(interaction.client, interaction.guild.id);
     if (existingRoles.some(r => r.roleId === roleId)) {
-        await replyUsarError(submitted, { type: ErrorTypes.CONFIGURATION, message: `El rol ${role} ya está configurado para una postulación.` });
+        await replyUserError(submitted, { type: ErrorTypes.CONFIGURATION, message: `El rol ${role} ya está configurado para una postulación.` });
         return;
     }
 
@@ -279,11 +279,11 @@ async function handleReview(interaction) {
         appId,
     );
     if (!application) {
-        return await replyUsarError(interaction, { type: ErrorTypes.USER_INPUT, message: 'Postulación no encontrada.' });
+        return await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: 'Postulación no encontrada.' });
     }
 
     if (application.status !== "pending") {
-        return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Esta postulación ya fue procesada.' });
+        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Esta postulación ya fue procesada.' });
     }
 
     const appEmbed = createEmbed({
@@ -313,7 +313,7 @@ async function handleReview(interaction) {
             .setStyle(ButtonStyle.Danger),
     );
 
-    await InteractionAyudaer.safeEditReply(interaction, {
+    await InteractionHelper.safeEditReply(interaction, {
         embeds: [appEmbed],
         components: [buttonRow],
         flags: ["Ephemeral"],
@@ -384,7 +384,7 @@ async function handleReview(interaction) {
                     title: `${reviewStatus.statusEmoji} Postulación ${statusText}`,
                     description: `Tu postulación para **${application.roleName}** fue **${statusText}**.\n` +
                         `**Nota:** ${reason}\n\n` +
-                        `Usa \`/solicitar estado id:${appId}\` para ver los detalles.`
+                        `Usa \`/apply estado id:${appId}\` para ver los detalles.`
                 }).setColor(statusColor);
 
                 await user.send({ embeds: [dmEmbed] });
@@ -459,7 +459,7 @@ async function handleReview(interaction) {
 
         } catch (error) {
             logger.error('Error revisando la postulación:', error);
-            await replyUsarError(buttonInteraction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al revisar la postulación.' });
+            await replyUserError(buttonInteraction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al revisar la postulación.' });
         }
     });
 
@@ -471,7 +471,7 @@ async function handleReview(interaction) {
                 color: 'warning',
             });
 
-            await InteractionAyudaer.safeEditReply(interaction, {
+            await InteractionHelper.safeEditReply(interaction, {
                 embeds: [timeoutEmbed],
                 components: [],
             }).catch(() => {});
@@ -481,7 +481,7 @@ async function handleReview(interaction) {
 
 async function handleList(interaction) {
     const status = interaction.options.getString("estado");
-    const user = interaction.options.getUsar("usuario");
+    const user = interaction.options.getUser("usuario");
     const limit = interaction.options.getNumber("limite") || 10;
 
     const filters = {};
@@ -536,15 +536,15 @@ async function handleList(interaction) {
             });
 
             embed.setFooter({
-                text: "Los usuarios pueden postularse con /solicitar enviar o ver las postulaciones disponibles con /solicitar lista"
+                text: "Los usuarios pueden postularse con /apply enviar o ver las postulaciones disponibles con /apply lista"
             });
 
-            return InteractionAyudaer.safeEditReply(interaction, { embeds: [embed], flags: ["Ephemeral"] });
+            return InteractionHelper.safeEditReply(interaction, { embeds: [embed], flags: ["Ephemeral"] });
         } else {
-            return await replyUsarError(interaction, {
+            return await replyUserError(interaction, {
                 type: ErrorTypes.CONFIGURATION,
                 message: 'No se encontraron postulaciones y no hay roles configurados.\n' +
-                    'Usa `/admin-app establecer` para configurar primero una postulación.'
+                    'Usa `/app-admin establecer` para configurar primero una postulación.'
             });
         }
     }
@@ -574,7 +574,7 @@ async function handleList(interaction) {
         });
     });
 
-    await InteractionAyudaer.safeEditReply(interaction, {
+    await InteractionHelper.safeEditReply(interaction, {
         embeds: [embed],
         flags: ["Ephemeral"],
     });

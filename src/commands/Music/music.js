@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 import {
     skipTrack,
     stopPlayback,
@@ -15,92 +15,92 @@ import {
     setTwentyFourSeven,
     leaveVoiceChannel,
     replyMusicSuccess,
-} from '../../services/musicaa/musicaaActions.js';
-import { deferMusicCommand } from '../../services/musicaa/prefixSupport.js';
+} from '../../services/music/musicActions.js';
+import { deferMusicCommand } from '../../services/music/prefixSupport.js';
 
 export default {
     category: 'Music',
     data: new SlashCommandBuilder()
-        .setName('musica')
-        .setDescription('Manage playback, queue, and voice session settings')
+        .setName('music')
+        .setDescription('Administra la reproducción, la cola y los ajustes de la sesión de voz')
         .addSubcommand((sub) =>
-            sub.setName('pause').setDescription('Pause playback'),
+            sub.setName('pause').setDescription('Pausa la reproducción'),
         )
         .addSubcommand((sub) =>
-            sub.setName('resume').setDescription('Resume playback'),
+            sub.setName('resume').setDescription('Reanuda la reproducción'),
         )
         .addSubcommand((sub) =>
-            sub.setName('skip').setDescription('Skip the current track'),
+            sub.setName('skip').setDescription('Salta la canción actual'),
         )
         .addSubcommand((sub) =>
-            sub.setName('stop').setDescription('Stop playback and clear the queue'),
+            sub.setName('stop').setDescription('Detén la reproducción y vacía la cola'),
         )
         .addSubcommand((sub) =>
-            sub.setName('shuffle').setDescription('Shuffle the queue'),
+            sub.setName('shuffle').setDescription('Mezcla el orden de la cola'),
         )
         .addSubcommand((sub) =>
             sub
                 .setName('loop')
-                .setDescription('Set loop mode')
+                .setDescription('Configura el modo de repetición')
                 .addStringOption((opt) =>
                     opt
                         .setName('mode')
-                        .setDescription('Loop mode')
+                        .setDescription('Modo de repetición')
                         .setRequired(true)
                         .addChoices(
-                            { name: 'Off', value: 'none' },
-                            { name: 'Track', value: 'track' },
-                            { name: 'Queue', value: 'queue' },
+                            { name: 'Desactivado', value: 'none' },
+                            { name: 'Canción', value: 'track' },
+                            { name: 'Cola', value: 'queue' },
                         ),
                 ),
         )
         .addSubcommand((sub) =>
             sub
                 .setName('volume')
-                .setDescription('Set playback volume')
+                .setDescription('Ajusta el volumen de reproducción')
                 .addIntegerOption((opt) =>
-                    opt.setName('level').setDescription('Volume (0-100)').setRequired(true).setMinValue(0).setMaxValue(100),
+                    opt.setName('level').setDescription('Volumen (0-100)').setRequired(true).setMinValue(0).setMaxValue(100),
                 ),
         )
         .addSubcommand((sub) =>
             sub
                 .setName('seek')
-                .setDescription('Seek to a position in the current track')
+                .setDescription('Salta a una posición de la canción actual')
                 .addIntegerOption((opt) =>
-                    opt.setName('seconds').setDescription('Position in seconds').setRequired(true).setMinValue(0),
+                    opt.setName('seconds').setDescription('Posición en segundos').setRequired(true).setMinValue(0),
                 ),
         )
         .addSubcommand((sub) =>
             sub
                 .setName('remove')
-                .setDescription('Remove a track from the queue')
+                .setDescription('Quita una canción de la cola')
                 .addIntegerOption((opt) =>
-                    opt.setName('position').setDescription('Queue position').setRequired(true).setMinValue(1),
+                    opt.setName('position').setDescription('Posición en la cola').setRequired(true).setMinValue(1),
                 ),
         )
         .addSubcommand((sub) =>
             sub
                 .setName('move')
-                .setDescription('Move a track in the queue')
+                .setDescription('Mueve una canción dentro de la cola')
                 .addIntegerOption((opt) =>
-                    opt.setName('from').setDescription('Current position').setRequired(true).setMinValue(1),
+                    opt.setName('from').setDescription('Posición actual').setRequired(true).setMinValue(1),
                 )
                 .addIntegerOption((opt) =>
-                    opt.setName('to').setDescription('New position').setRequired(true).setMinValue(1),
+                    opt.setName('to').setDescription('Nueva posición').setRequired(true).setMinValue(1),
                 ),
         )
         .addSubcommand((sub) =>
-            sub.setName('clear').setDescription('Clear the queue'),
+            sub.setName('clear').setDescription('Vacía la cola'),
         )
         .addSubcommand((sub) =>
-            sub.setName('leave').setDescription('Disconnect the bot from the voice channel'),
+            sub.setName('leave').setDescription('Desconecta al bot del canal de voz'),
         )
         .addSubcommand((sub) =>
             sub
                 .setName('247')
-                .setDescription('Toggle 24/7 mode (stay in voice channel when idle)')
+                .setDescription('Activa o desactiva el modo 24/7 (permanece en el canal de voz cuando está inactivo)')
                 .addBooleanOption((opt) =>
-                    opt.setName('enabled').setDescription('Enable or disable 24/7 mode').setRequired(true),
+                    opt.setName('enabled').setDescription('Activa o desactiva el modo 24/7').setRequired(true),
                 ),
         ),
 
@@ -180,8 +180,8 @@ export default {
                 break;
             }
             default:
-                await InteractionAyudaer.safeEditReply(interaction, {
-                    content: 'Unknown music subcommand.',
+                await InteractionHelper.safeEditReply(interaction, {
+                    content: 'Subcomando de música desconocido.',
                 });
         }
     },

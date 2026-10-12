@@ -2,16 +2,16 @@ import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 import { getColor } from '../../config/bot.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 const EMOJIS = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 const MAX_OPTIONS = 10;
 export default {
     data: new SlashCommandBuilder()
-        .setName('encuesta')
+        .setName('poll')
         .setDescription('Crea una encuesta sencilla con hasta 10 opciones')
         .addStringOption(option =>
             option.setName('question')
-                .setDescription('La pregunta de la encuesta')
+                .setDescription('Pregunta de la encuesta')
                 .setRequired(true))
         .addStringOption(option =>
             option.setName('option1')
@@ -55,11 +55,11 @@ export default {
                 .setRequired(false))
         .addBooleanOption(option =>
             option.setName('anonymous')
-                .setDescription('Haz que la encuesta sea anónima (predeterminado: falso)')
+                .setDescription('Hacer anónima la encuesta (predeterminado: no)')
                 .setRequired(false)),
 
     async execute(interaction) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+        const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
         if (!deferSuccess) {
             logger.warn(`Poll interaction defer failed`, {
                 userId: interaction.user.id,
@@ -105,8 +105,8 @@ export default {
             await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-        await InteractionAyudaer.safeEditReply(interaction, {
-            content: '✅ Poll created successfully!',
+        await InteractionHelper.safeEditReply(interaction, {
+            content: '✅ La encuesta se creó correctamente.',
         });
     },
 };

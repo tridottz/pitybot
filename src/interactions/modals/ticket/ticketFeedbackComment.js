@@ -3,7 +3,7 @@ import { getTicketData, saveTicketData } from '../../../utils/database.js';
 import { logger } from '../../../utils/logger.js';
 import { getColor } from '../../../config/bot.js';
 import { logTicketFeedback } from '../../../utils/ticket/ticketLogging.js';
-import { InteractionAyudaer } from '../../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../../utils/interactionHelper.js';
 
 function buildEmbed(title, description, color) {
     return new EmbedBuilder()
@@ -19,7 +19,7 @@ export default {
         const [guildId, channelId] = args;
 
         if (!guildId || !channelId) {
-            await InteractionAyudaer.safeReply(interaction, {
+            await InteractionHelper.safeReply(interaction, {
                 embeds: [buildEmbed(
                     '⚠️ Invalid Feedback Submission',
                     'This feedback form appears to be malformed.',
@@ -32,7 +32,7 @@ export default {
 
         const comment = interaction.fields.getTextInputValue('feedback_comment')?.trim();
         if (!comment) {
-            await InteractionAyudaer.safeReply(interaction, {
+            await InteractionHelper.safeReply(interaction, {
                 embeds: [buildEmbed(
                     '⚠️ Empty Feedback',
                     'Please enter a comment before submitting your feedback.',
@@ -43,7 +43,7 @@ export default {
             return;
         }
 
-        const deferred = await InteractionAyudaer.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+        const deferred = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
         if (!deferred) {
             return;
         }
@@ -56,10 +56,10 @@ export default {
         }
 
         if (!ticketData) {
-            await InteractionAyudaer.safeEditReply(interaction, {
+            await InteractionHelper.safeEditReply(interaction, {
                 embeds: [buildEmbed(
                     '⚠️ Ticket Not Found',
-                    'Could not find the ticket associated with this feedback.',
+                    'No se encontró el ticket asociado a esta opinión.',
                     getColor('error'),
                 )],
             });
@@ -67,7 +67,7 @@ export default {
         }
 
         if (interaction.user.id !== ticketData.userId) {
-            await InteractionAyudaer.safeEditReply(interaction, {
+            await InteractionHelper.safeEditReply(interaction, {
                 embeds: [buildEmbed(
                     '❌ Not Allowed',
                     'Only the ticket creator can submit feedback for this ticket.',
@@ -103,10 +103,10 @@ export default {
             logger.warn('ticketFeedbackComment: failed to send log', { guildId, channelId, error: err.message });
         }
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [buildEmbed(
                 '✅ Feedback Submitted',
-                'Your written feedback has been recorded. Thank you for helping us improve!',
+                'Se registró tu opinión. ¡Gracias por ayudarnos a mejorar!',
                 getColor('success'),
             )],
         });

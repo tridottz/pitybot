@@ -1,7 +1,7 @@
 import { Events } from 'discord.js';
-import { logEvent, EVENT_TYPES } from '../services/registrosService.js';
+import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
 import { logger } from '../utils/logger.js';
-import { buildRoleAuditLines } from '../utils/registros/logEmbeds.js';
+import { buildRoleAuditLines } from '../utils/logging/logEmbeds.js';
 
 export default {
   name: Events.GuildRoleDelete,
@@ -18,7 +18,7 @@ export default {
         guildId: role.guild.id,
         eventType: EVENT_TYPES.ROLE_DELETE,
         data: {
-          title: 'Role Deleted',
+          title: 'Rol eliminado',
           headline: `**${role.name}** was deleted`,
           lines,
         },

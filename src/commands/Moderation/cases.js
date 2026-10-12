@@ -2,32 +2,32 @@ import { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuild
 import { createEmbed, successEmbed } from '../../utils/embeds.js';
 import { getModerationCases } from '../../utils/moderation.js';
 import { logger } from '../../utils/logger.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
     data: new SlashCommandBuilder()
-        .setName('casos')
-        .setDescription('Muestra los casos de moderación and audit logs')
+        .setName('cases')
+        .setDescription('Consulta los casos de moderación y los registros de auditoría')
         .setDefaultMemberPermissions(PermissionFlagsBits.ViewAuditLog)
         .setDMPermission(false)
         .addStringOption(option =>
             option.setName('filter')
-                .setDescription('Filter cases by type or user')
+                .setDescription('Filtra los casos por tipo o usuario')
                 .addChoices(
-                    { name: 'All Cases', value: 'all' },
-                    { name: 'Bans', value: 'Member Baneado' },
-                    { name: 'Kicks', value: 'Member Kicked' },
-                    { name: 'Timeouts', value: 'Member Timed Out' },
-                    { name: 'Warnings', value: 'Usar Warned' }
+                    { name: 'Todos los casos', value: 'all' },
+                    { name: 'Expulsiones', value: 'Member Banned' },
+                    { name: 'Expulsiones del servidor', value: 'Member Kicked' },
+                    { name: 'Tiempos de espera', value: 'Member Timed Out' },
+                    { name: 'Advertencias', value: 'User Warned' }
                 )
         )
-        .addUsarOption(option =>
+        .addUserOption(option =>
             option.setName('user')
-                .setDescription('Filter cases by specific user')
+                .setDescription('Filtra los casos por un usuario específico')
         )
         .addIntegerOption(option =>
             option.setName('limit')
-                .setDescription('Number of cases to show (default: 10)')
+                .setDescription('Número de casos que se mostrarán (predeterminado: 10)')
                 .setMinValue(1)
                 .setMaxValue(50)
         ),
@@ -35,7 +35,7 @@ export default {
     category: 'moderation',
 
     async execute(interaction, config, client) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction);
+        const deferSuccess = await InteractionHelper.safeDefer(interaction);
         if (!deferSuccess) {
             logger.warn(`Cases interaction defer failed`, {
                 userId: interaction.user.id,
@@ -47,20 +47,20 @@ export default {
 
         try {
             const filterType = interaction.options.getString('filter') || 'all';
-            const targetUsar = interaction.options.getUsar('user');
+            const targetUser = interaction.options.getUser('user');
             const limit = interaction.options.getInteger('limit') || 10;
 
             const filters = {
                 limit,
                 action: filterType === 'all' ? undefined : filterType,
-                userId: targetUsar?.id
+                userId: targetUser?.id
             };
 
             const cases = await getModerationCases(interaction.guild.id, filters);
 
             if (cases.length === 0) {
-                throw new Error(targetUsar 
-                    ? `No moderation cases found for ${targetUsar.tag}`
+                throw new Error(targetUser 
+                    ? `No moderation cases found for ${targetUser.tag}`
                     : `No ${filterType === 'all' ? '' : filterType} cases found in this server.`
                 );
             }
@@ -75,8 +75,8 @@ export default {
                 const pageCases = cases.slice(startIndex, endIndex);
 
                 const embed = createEmbed({
-                    title: 'Moderation Cases',
-                    description: `Showing moderation cases for **${interaction.guild.name}**\n\n**Page ${page} of ${totalPages}**`
+                    title: 'Casos de moderación',
+                    description: `Casos de moderación de **${interaction.guild.name}**\n\n**Página ${page} de ${totalPages}**`
                 });
 
                 pageCases.forEach(case_ => {
@@ -85,13 +85,13 @@ export default {
                     
                     embed.addFields({
                         name: `Case #${case_.caseId} - ${case_.action}`,
-                        value: `**Target:** ${case_.target}\n**Moderator:** ${case_.executor}\n**Date:** ${date} at ${time}\n**Motivo:** ${case_.reason || 'No se proporcionó un motivo'}`,
+                        value: `**Target:** ${case_.target}\n**Moderator:** ${case_.executor}\n**Date:** ${date} at ${time}\n**Reason:** ${case_.reason || 'No reason provided'}`,
                         inline: false
                     });
                 });
 
                 embed.setFooter({
-                    text: `Total cases: ${cases.length} | Filter: ${filterType}${targetUsar ?` | Usar: ${targetUsar.tag}`: ''}`
+                    text: `Total cases: ${cases.length} | Filter: ${filterType}${targetUser ?` | User: ${targetUser.tag}`: ''}`
                 });
 
                 return embed;
@@ -102,19 +102,19 @@ export default {
                 
                 const prevButton = new ButtonBuilder()
                     .setCustomId('prev_page')
-                    .setLabel('⬅️ Previous')
+                    .setLabel('⬅️ Anterior')
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(page === 1);
 
                 const pageInfoButton = new ButtonBuilder()
                     .setCustomId('page_info')
-                    .setLabel(`Page ${page}/${totalPages}`)
+                    .setLabel(`Página ${page}/${totalPages}`)
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(true);
 
                 const nextButton = new ButtonBuilder()
                     .setCustomId('next_page')
-                    .setLabel('Next ➡️')
+                    .setLabel('Siguiente ➡️')
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(page === totalPages);
 
@@ -137,7 +137,7 @@ time: 120000
 
                 if (buttonInteraction.user.id !== interaction.user.id) {
                     await buttonInteraction.followUp({
-                        content: 'You cannot use these buttons. Ejecuta `/casos` to get your own case view.',
+                        content: 'No puedes usar estos botones. Ejecuta `/cases` para consultar tus propios casos.',
                         flags: MessageFlags.Ephemeral
                     });
                     return;
@@ -171,7 +171,7 @@ time: 120000
 
         } catch (error) {
             logger.error('Error in cases command:', error);
-            return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while retrieving moderation cases. Please try again later.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al consultar los casos de moderación. Inténtalo de nuevo más tarde.' });
         }
     }
 };

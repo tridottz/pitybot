@@ -24,7 +24,7 @@ export function getMemberInvitesKey(guildId, userId) {
     return `guild:${guildId}:invites:${userId}`;
 }
 
-export function getInviteUsasKey(guildId, inviteCode) {
+export function getInviteUsesKey(guildId, inviteCode) {
     return `guild:${guildId}:invite_uses:${inviteCode}`;
 }
 
@@ -52,11 +52,11 @@ export function getLevelingKey(guildId) {
     return `guild:${guildId}:leveling:config`;
 }
 
-export function getUsarLevelKey(guildId, userId) {
+export function getUserLevelKey(guildId, userId) {
     return `guild:${guildId}:leveling:users:${userId}`;
 }
 
-export function getUsarLevelPrefix(guildId) {
+export function getUserLevelPrefix(guildId) {
     return `guild:${guildId}:leveling:users:`;
 }
 
@@ -68,7 +68,7 @@ export function getApplicationSettingsKey(guildId) {
     return `guild:${guildId}:applications:settings`;
 }
 
-export function getUsarApplicationsKey(guildId, userId) {
+export function getUserApplicationsKey(guildId, userId) {
     return `guild:${guildId}:applications:users:${userId}`;
 }
 
@@ -96,11 +96,11 @@ export function getWarningsPrefix(guildId) {
     return `guild:${guildId}:warnings:`;
 }
 
-export function getUsarNotesKey(guildId, userId) {
+export function getUserNotesKey(guildId, userId) {
     return `guild:${guildId}:usernotes:${userId}`;
 }
 
-export function getUsarNotesListKey(guildId) {
+export function getUserNotesListKey(guildId) {
     return `guild:${guildId}:usernotes:list`;
 }
 
@@ -126,7 +126,7 @@ export function getGiveawayLockKey(messageId) {
 
 /**
  * Legacy key patterns mapped to canonical builders.
- * Usad by migration script and read-time fallback.
+ * Used by migration script and read-time fallback.
  */
 export const LEGACY_KEY_RESOLVERS = [
     {
@@ -139,7 +139,7 @@ export const LEGACY_KEY_RESOLVERS = [
     },
     {
         pattern: /^([^:]+):leveling:users:([^:]+)$/,
-        toCanonical: ([, guildId, userId]) => getUsarLevelKey(guildId, userId),
+        toCanonical: ([, guildId, userId]) => getUserLevelKey(guildId, userId),
         skipIf: (guildId) => guildId === 'guild',
     },
     {
@@ -148,11 +148,11 @@ export const LEGACY_KEY_RESOLVERS = [
     },
     {
         pattern: /^moderation_user_notes_([^_]+)_([^_]+)$/,
-        toCanonical: ([, guildId, userId]) => getUsarNotesKey(guildId, userId),
+        toCanonical: ([, guildId, userId]) => getUserNotesKey(guildId, userId),
     },
     {
         pattern: /^moderation_user_notes_list_([^_]+)$/,
-        toCanonical: ([, guildId]) => getUsarNotesListKey(guildId),
+        toCanonical: ([, guildId]) => getUserNotesListKey(guildId),
     },
     {
         pattern: /^reaction_roles:([^:]+):([^:]+)$/,

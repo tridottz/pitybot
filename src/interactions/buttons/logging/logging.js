@@ -1,4 +1,4 @@
-import loggingButtonsHandler from '../../../handlers/registrosButtons.js';
+import loggingButtonsHandler from '../../../handlers/loggingButtons.js';
 
 export default [
   {

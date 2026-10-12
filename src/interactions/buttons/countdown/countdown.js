@@ -1,4 +1,4 @@
-import countdownButtonHandler from '../../../handlers/contardownButtons.js';
+import countdownButtonHandler from '../../../handlers/countdownButtons.js';
 
 export default [
   {

@@ -1,6 +1,6 @@
 // prefixParser.js
 
-import { resolveSubcommandAlias } from '../config/comandos/commandAliases.js';
+import { resolveSubcommandAlias } from '../config/commands/commandAliases.js';
 import { logger } from './logger.js';
 
 export function parsePrefixCommand(content, prefix) {
@@ -88,7 +88,7 @@ export function mapArgumentsToOptions(args, commandData) {
       _positional: args,
       get: (name) => args[0] || null,
       getString: (name) => args[0] || null,
-      getUsar: (name) => null,
+      getUser: (name) => null,
       getInteger: (name) => parseInt(args[0]) || null,
       getBoolean: (name) => args[0] === 'true',
       getSubcommand: () => null,
@@ -195,7 +195,7 @@ export function mapArgumentsToOptions(args, commandData) {
     _positional: args,
     get: (name) => options[name] || null,
     getString: (name) => options[name] || null,
-    getUsar: (name) => options[name] || null,
+    getUser: (name) => options[name] || null,
     getMember: (name) => options[name] || null,
     getChannel: (name) => options[name] || null,
     getRole: (name) => options[name] || null,

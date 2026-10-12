@@ -1,4 +1,4 @@
-import calculateModalHandler from '../../../handlers/calcularModals.js';
+import calculateModalHandler from '../../../handlers/calculateModals.js';
 
 const execute = typeof calculateModalHandler === 'function'
   ? calculateModalHandler

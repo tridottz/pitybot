@@ -1,10 +1,10 @@
 import { PermissionFlagsBits, ChannelType } from 'discord.js';
 import { createEmbed, successEmbed } from '../../../utils/embeds.js';
-import { getServerCounters, saveServerCounters, updateCounter, getCounterBaseName, getCounterTypeLabel } from '../../../services/estadisticas-servidorService.js';
+import { getServerCounters, saveServerCounters, updateCounter, getCounterBaseName, getCounterTypeLabel } from '../../../services/serverstatsService.js';
 import { logger } from '../../../utils/logger.js';
 
-import { InteractionAyudaer } from '../../../utils/interactionAyudaer.js';
-import { replyUsarError, ErrorTypes } from '../../../utils/errorHandler.js';
+import { InteractionHelper } from '../../../utils/interactionHelper.js';
+import { replyUserError, ErrorTypes } from '../../../utils/errorHandler.js';
 export async function handleCreate(interaction, client) {
     const guild = interaction.guild;
     const type = interaction.options.getString("type");
@@ -12,20 +12,20 @@ export async function handleCreate(interaction, client) {
     const category = interaction.options.getChannel("category");
 
     try {
-        await InteractionAyudaer.safeDefer(interaction);
+        await InteractionHelper.safeDefer(interaction);
     } catch (error) {
         logger.error("Failed to defer reply:", error);
         return;
     }
 
     if (!interaction.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-        await replyUsarError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need **Manage Channels** permission to create counters.' }).catch(logger.error);
+        await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Necesitas el permiso **Gestionar canales** para crear contadores.' }).catch(logger.error);
         return;
     }
 
     try {
         if (!category || category.type !== ChannelType.GuildCategory) {
-            await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Please select a valid category for the counter channel.' }).catch(logger.error);
+            await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Selecciona una categoría válida para el canal del contador.' }).catch(logger.error);
             return;
         }
 
@@ -38,7 +38,7 @@ export async function handleCreate(interaction, client) {
 
         if (duplicateType) {
             const duplicateChannel = guild.channels.cache.get(duplicateType.channelId);
-            await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: `A **${getCounterTypeLabel(type)}** counter already exists for this server${duplicateChannel ? ` in ${duplicateChannel}` : ''}. Delete it first before creating another.` }).catch(logger.error);
+            await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Ya existe un contador **${getCounterTypeLabel(type)}** en este servidor${duplicateChannel ? ` en ${duplicateChannel}` : ''}. Elimínalo antes de crear otro.` }).catch(logger.error);
             return;
         }
 
@@ -51,7 +51,7 @@ export async function handleCreate(interaction, client) {
 
         const existingCounter = counters.find(c => c.channelId === targetChannel.id);
         if (existingCounter) {
-            await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: `A counter already exists for channel **${targetChannel.name}**. Please delete it first or choose a different type.` }).catch(logger.error);
+            await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Ya existe un contador en el canal **${targetChannel.name}**. Elimínalo primero o elige otro tipo.` }).catch(logger.error);
             return;
         }
 
@@ -69,22 +69,22 @@ export async function handleCreate(interaction, client) {
         const saved = await saveServerCounters(client, guild.id, counters);
         if (!saved) {
             await targetChannel.delete('Counter creation failed during save').catch(() => null);
-            await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Failed to save counter data. Please try again.' }).catch(logger.error);
+            await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'No se pudieron guardar los datos del contador. Inténtalo de nuevo.' }).catch(logger.error);
             return;
         }
 
         const updated = await updateCounter(client, guild, newCounter);
         if (!updated) {
-            await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Counter created but failed to update channel name. The counter will update on the next scheduled run.' }).catch(logger.error);
+            await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Se creó el contador, pero no se pudo actualizar el nombre del canal. Se actualizará en la próxima ejecución programada.' }).catch(logger.error);
             return;
         }
 
-        await InteractionAyudaer.safeEditReply(interaction, {
-            embeds: [successEmbed(`**Counter Created Successfully!**\n\n**Type:** ${getCounterTypeLabel(type)}\n**Channel Type:** ${targetChannel.type === ChannelType.GuildVoice ? 'voice' : 'text'}\n**Category:** ${category}\n**Channel:** ${targetChannel}\n**Channel Name:** ${targetChannel.name}\n**Counter ID:** \`${newCounter.id}\`\n\nThe counter will automatically update every 15 minutes.\n\nUsa \`/estadisticas-servidor list\` to view all counters.`)]
+        await InteractionHelper.safeEditReply(interaction, {
+            embeds: [successEmbed(`**¡Contador creado correctamente!**\n\n**Tipo:** ${getCounterTypeLabel(type)}\n**Tipo de canal:** ${targetChannel.type === ChannelType.GuildVoice ? 'voz' : 'texto'}\n**Categoría:** ${category}\n**Canal:** ${targetChannel}\n**Nombre del canal:** ${targetChannel.name}\n**ID del contador:** \`${newCounter.id}\`\n\nEl contador se actualizará automáticamente cada 15 minutos.\n\nUsa \`/serverstats list\` para ver todos los contadores.`)]
         }).catch(logger.error);
 
     } catch (error) {
         logger.error("Error creating counter:", error);
-        await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while creating the counter. Please try again.' }).catch(logger.error);
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al crear el contador. Inténtalo de nuevo.' }).catch(logger.error);
     }
 }

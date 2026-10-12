@@ -1,7 +1,7 @@
 import {
     canonicalizeKey,
     getEconomyPrefix,
-    getUsarLevelPrefix,
+    getUserLevelPrefix,
     getWarningsPrefix,
     getReactionRolesPrefix,
     getApplicationsPrefix,
@@ -175,7 +175,7 @@ export function getStructuredListPlan(prefix, tables) {
         });
     };
 
-    const addUsarLevels = (guildId) => {
+    const addUserLevels = (guildId) => {
         plan.queries.push({
             sql: `SELECT user_id FROM ${tables.user_levels} WHERE guild_id = $1`,
             params: [guildId],
@@ -209,7 +209,7 @@ export function getStructuredListPlan(prefix, tables) {
             `guild:${guildId}:birthdays:tracking`,
         );
         addEconomy(guildId);
-        addUsarLevels(guildId);
+        addUserLevels(guildId);
         addTickets(guildId);
     };
 
@@ -227,13 +227,13 @@ export function getStructuredListPlan(prefix, tables) {
 
     match = normalizedPrefix.match(/^([^:]+):leveling:users:$/);
     if (match && match[1] !== 'guild') {
-        addUsarLevels(match[1]);
+        addUserLevels(match[1]);
         return plan;
     }
 
     match = normalizedPrefix.match(/^guild:([^:]+):leveling:users:$/);
     if (match) {
-        addUsarLevels(match[1]);
+        addUserLevels(match[1]);
         return plan;
     }
 
@@ -284,7 +284,7 @@ export function getStructuredListPlan(prefix, tables) {
             `reaction_roles:${match[1]}:`,
             getEconomyPrefix(match[1]),
             `economy:${match[1]}:`,
-            getUsarLevelPrefix(match[1]),
+            getUserLevelPrefix(match[1]),
             `${match[1]}:leveling:users:`,
         ];
         return plan;

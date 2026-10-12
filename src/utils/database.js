@@ -21,26 +21,26 @@ export {
     getTicketCounterKey,
     getInviteTrackingKey,
     getMemberInvitesKey,
-    getInviteUsasKey,
+    getInviteUsesKey,
     getFakeAccountKey,
     getEconomyKey,
     getEconomyPrefix,
     getAFKKey,
     getWelcomeConfigKey,
     getLevelingKey,
-    getUsarLevelKey,
-    getUsarLevelPrefix,
+    getUserLevelKey,
+    getUserLevelPrefix,
     getApplicationRolesKey,
     getApplicationSettingsKey,
-    getUsarApplicationsKey,
+    getUserApplicationsKey,
     getApplicationKey,
     getApplicationsPrefix,
     getJoinToCreateConfigKey,
     getJoinToCreateChannelsKey,
     getWarningsKey,
     getWarningsPrefix,
-    getUsarNotesKey,
-    getUsarNotesListKey,
+    getUserNotesKey,
+    getUserNotesListKey,
     getReactionRoleKey,
     getReactionRolesPrefix,
     getServerCountersKey,
@@ -52,7 +52,7 @@ export {
 
 export {
     getTicketData,
-    getOpenTicketCountForUsar,
+    getOpenTicketCountForUser,
     saveTicketData,
     deleteTicketData,
     getTicketCounter,
@@ -65,17 +65,17 @@ import {
     getGuildConfigKey,
     getGuildBirthdaysKey,
     getLevelingKey,
-    getUsarLevelKey,
+    getUserLevelKey,
     getApplicationRolesKey,
     getApplicationSettingsKey,
-    getUsarApplicationsKey,
+    getUserApplicationsKey,
     getApplicationKey,
     getJoinToCreateConfigKey,
     getJoinToCreateChannelsKey,
     getWelcomeConfigKey,
     getEconomyKey,
     getAFKKey,
-    getUsarLevelPrefix,
+    getUserLevelPrefix,
 } from './database/keys.js';
 
 export async function insertVerificationAudit(record) {
@@ -343,23 +343,23 @@ function normalizeWelcomeConfig(raw = {}) {
     const channelId = base.channelId ?? null;
     const goodbyeChannelId = base.goodbyeChannelId ?? null;
 
-    const welcomeMessage = base.welcomeMessage ?? "Welcome {user} to {server}!";
-    const leaveMessage = base.leaveMessage ?? "{user.tag} has left the server.";
+    const welcomeMessage = base.welcomeMessage ?? "¡Te damos la bienvenida, {user}, a {server}!";
+    const leaveMessage = base.leaveMessage ?? "{user.tag} ha salido del servidor.";
 
     const welcomeEmbed = base.welcomeEmbed ?? {
-        title: "🎉 Welcome!",
-        description: "Welcome {user} to {server}!",
+        title: "🎉 ¡Te damos la bienvenida!",
+        description: "¡Te damos la bienvenida, {user}, a {server}!",
         color: getColor("success"),
         thumbnail: true,
-        footer: "Welcome to {server}!"
+        footer: "Te damos la bienvenida a {server}."
     };
 
     const leaveEmbed = base.leaveEmbed ?? {
-        title: "👋 Goodbye",
-        description: "{user.tag} has left the server.",
+        title: "👋 Hasta pronto",
+        description: "{user.tag} ha salido del servidor.",
         color: getColor("error"),
         thumbnail: true,
-        footer: "Goodbye from {server}!"
+        footer: "¡Hasta pronto, desde {server}!"
     };
 
     const roleIds = Array.isArray(base.roleIds) ? base.roleIds : [];
@@ -477,8 +477,8 @@ export async function saveLevelingConfig(client, guildId, config) {
     }
 }
 
-export async function getUsarLevelData(client, guildId, userId) {
-    const key = getUsarLevelKey(guildId, userId);
+export async function getUserLevelData(client, guildId, userId) {
+    const key = getUserLevelKey(guildId, userId);
     try {
         const data = await getFromDb(key, null);
         if (!data) {
@@ -515,8 +515,8 @@ export async function getUsarLevelData(client, guildId, userId) {
     }
 }
 
-export async function saveUsarLevelData(client, guildId, userId, data) {
-    const key = getUsarLevelKey(guildId, userId);
+export async function saveUserLevelData(client, guildId, userId, data) {
+    const key = getUserLevelKey(guildId, userId);
     try {
         const levelData = {
             ...data,
@@ -547,7 +547,7 @@ export async function getLeaderboard(client, guildId, limit = 10) {
             return [];
         }
 
-        const prefix = getUsarLevelPrefix(guildId);
+        const prefix = getUserLevelPrefix(guildId);
         let keys = await client.db.list(prefix);
         
         if (!Array.isArray(keys)) {
@@ -722,7 +722,7 @@ export async function deleteApplication(client, guildId, applicationId, userIdHi
         await client.db.delete(key);
 
         if (userId) {
-            const userKey = getUsarApplicationsKey(guildId, userId);
+            const userKey = getUserApplicationsKey(guildId, userId);
             const userApplications = await client.db.get(userKey, []);
             const unwrapped = unwrapReplitData(userApplications);
             const ids = Array.isArray(unwrapped) ? unwrapped : [];
@@ -872,7 +872,7 @@ status: 'pending',
 
         await client.db.set(key, newApplication);
         
-        const userKey = getUsarApplicationsKey(guildId, userId);
+        const userKey = getUserApplicationsKey(guildId, userId);
         const userApplications = await client.db.get(userKey, []);
         const unwrappedApplications = unwrapReplitData(userApplications);
         
@@ -925,11 +925,11 @@ export async function updateApplication(client, guildId, applicationId, updates)
     }
 }
 
-export async function getUsarApplications(client, guildId, userId) {
-    const userKey = getUsarApplicationsKey(guildId, userId);
+export async function getUserApplications(client, guildId, userId) {
+    const userKey = getUserApplicationsKey(guildId, userId);
     try {
         if (!client.db || typeof client.db.get !== "function") {
-            logger.error("Database client is not available for getUsarApplications.");
+            logger.error("Database client is not available for getUserApplications.");
             return [];
         }
 
@@ -1174,9 +1174,9 @@ export function formatChannelName(template, variables) {
     let formatted = template;
     
     const replacements = {
-        '{username}': variables.username || 'Usar',
-        '{user_tag}': variables.userTag || 'Usar#0000',
-        '{display_name}': variables.displayName || 'Usar',
+        '{username}': variables.username || 'User',
+        '{user_tag}': variables.userTag || 'User#0000',
+        '{display_name}': variables.displayName || 'User',
         '{guild_name}': variables.guildName || 'Server',
         '{channel_name}': variables.channelName || 'Voice Channel'
     };

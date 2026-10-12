@@ -1,14 +1,14 @@
 import { EmbedBuilder, MessageFlags } from 'discord.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { logger } from '../../utils/logger.js';
 import { handleInteractionError, createError, ErrorTypes } from '../../utils/errorHandler.js';
 import { getColor } from '../../config/bot.js';
-import { logEvent, EVENT_TYPES } from '../../services/registrosService.js';
+import { logEvent, EVENT_TYPES } from '../../services/loggingService.js';
 import { getReactionRoleMessage } from '../../services/reactionRoleService.js';
 
 export async function handleReactionRolesSelectMenu(interaction, client) {
     try {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+        const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
         if (!deferSuccess) return;
 
         if (!interaction.inGuild() || !interaction.guild || !interaction.member) {
@@ -29,7 +29,7 @@ export async function handleReactionRolesSelectMenu(interaction, client) {
             return interaction.editReply({
                 embeds: [
                     new EmbedBuilder()
-                        .setDescription('❌ This reaction role message is no longer active.')
+                        .setDescription('❌ Este panel de roles ya no está activo.')
                         .setColor(getColor('error'))
                 ]
             });
@@ -44,7 +44,7 @@ export async function handleReactionRolesSelectMenu(interaction, client) {
             throw createError(
                 'Unable to fetch bot member for permission validation',
                 ErrorTypes.PERMISSION,
-                'I could not verify my server permissions. Please try again.',
+                'No pude comprobar mis permisos en el servidor. Inténtalo de nuevo.',
                 { guildId: interaction.guildId }
             );
         }

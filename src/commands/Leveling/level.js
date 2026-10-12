@@ -1,34 +1,34 @@
 import { getColor } from '../../config/bot.js';
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
-import { getLevelingConfig, saveLevelingConfig } from '../../services/niveling/niveling.js';
+import { getLevelingConfig, saveLevelingConfig } from '../../services/leveling/leveling.js';
 import { botHasPermission } from '../../utils/permissionGuard.js';
-import { TitanBotError, ErrorTypes, replyUsarError } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { TitanBotError, ErrorTypes, replyUserError } from '../../utils/errorHandler.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { logger } from '../../utils/logger.js';
-import levelDashboard from './modules/nivel_dashboard.js';
+import levelDashboard from './modules/level_dashboard.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('nivel')
-        .setDescription('Manage the leveling system')
+        .setName('level')
+        .setDescription('Administra el sistema de niveles')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .setDMPermission(false)
         .addSubcommand((subcommand) =>
             subcommand
                 .setName('setup')
-                .setDescription('Set up the leveling system — this also enables it')
+                .setDescription('Configura el sistema de niveles; esto también lo activa')
                 .addChannelOption((option) =>
                     option
                         .setName('channel')
-                        .setDescription('Channel to send level-up notifications in')
+                        .setDescription('Canal donde se enviarán los avisos al subir de nivel')
                         .addChannelTypes(ChannelType.GuildText)
                         .setRequired(true),
                 )
                 .addIntegerOption((option) =>
                     option
                         .setName('xp_min')
-                        .setDescription('Minimum XP awarded per message (default: 15)')
+                        .setDescription('XP mínima otorgada por mensaje (predeterminado: 15)')
                         .setMinValue(1)
                         .setMaxValue(500)
                         .setRequired(false),
@@ -36,7 +36,7 @@ export default {
                 .addIntegerOption((option) =>
                     option
                         .setName('xp_max')
-                        .setDescription('Maximum XP awarded per message (default: 25)')
+                        .setDescription('XP máxima otorgada por mensaje (predeterminado: 25)')
                         .setMinValue(1)
                         .setMaxValue(500)
                         .setRequired(false),
@@ -45,7 +45,7 @@ export default {
                     option
                         .setName('message')
                         .setDescription(
-                            'Level-up message. Usa {user} and {level} as placeholders (default provided)',
+                            'Mensaje al subir de nivel. Usa {user} y {level} como marcadores (hay un mensaje predeterminado)',
                         )
                         .setMaxLength(500)
                         .setRequired(false),
@@ -53,7 +53,7 @@ export default {
                 .addIntegerOption((option) =>
                     option
                         .setName('xp_cooldown')
-                        .setDescription('Seconds between XP grants per user (default: 60)')
+                        .setDescription('Segundos entre asignaciones de XP por usuario (predeterminado: 60)')
                         .setMinValue(0)
                         .setMaxValue(3600)
                         .setRequired(false),
@@ -62,18 +62,18 @@ export default {
         .addSubcommand((subcommand) =>
             subcommand
                 .setName('dashboard')
-                .setDescription('Open the interactive leveling configuration dashboard'),
+                .setDescription('Abre el panel interactivo de configuración de niveles'),
         ),
-    category: 'Leveling',
+    category: 'Niveles',
 
     async execute(interaction, config, client) {
-        const deferred = await InteractionAyudaer.safeDefer(interaction, {
+        const deferred = await InteractionHelper.safeDefer(interaction, {
             flags: MessageFlags.Ephemeral,
         });
         if (!deferred) return;
 
         if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-            return await replyUsarError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the **Manage Server** permission to use this command.' });
+            return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Necesitas el permiso **Administrar servidor** para usar este comando.' });
         }
 
         const subcommand = interaction.options.getSubcommand();
@@ -88,25 +88,25 @@ export default {
             const xpMax = interaction.options.getInteger('xp_max') ?? 25;
             const message =
                 interaction.options.getString('message') ??
-                '{user} has leveled up to level {level}!';
+                '¡{user} ha subido al nivel {level}!';
             const xpCooldown = interaction.options.getInteger('xp_cooldown') ?? 60;
 
             if (xpMin > xpMax) {
-                return await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: `Minimum XP (**${xpMin}**) cannot be greater than maximum XP (**${xpMax}**).` });
+                return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: `La XP mínima (**${xpMin}**) no puede ser mayor que la XP máxima (**${xpMax}**).` });
             }
 
             if (!botHasPermission(channel, ['SendMessages', 'EmbedLinks'])) {
                 throw new TitanBotError(
                     'Bot missing permissions in the specified channel',
                     ErrorTypes.PERMISSION,
-                    `I need **SendMessages** and **EmbedLinks** permissions in ${channel} to send level-up notifications.`,
+                    `Necesito los permisos **Enviar mensajes** e **Insertar enlaces** en ${channel} para enviar avisos de subida de nivel.`,
                 );
             }
 
             const existingConfig = await getLevelingConfig(client, interaction.guildId);
 
             if (existingConfig.configured) {
-                return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: `The leveling system is already set up on this server (level-up notifications go to <#${existingConfig.levelUpChannel}>).\n\nUsa \`/nivel dashboard\` to adjust any settings.` });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `El sistema de niveles ya está configurado en este servidor (los avisos se envían a <#${existingConfig.levelUpChannel}>).\n\nUsa \`/level dashboard\` para cambiar la configuración.` });
             }
 
             const newConfig = {
@@ -130,17 +130,17 @@ export default {
                 userId: interaction.user.id,
             });
 
-            return await InteractionAyudaer.safeEditReply(interaction, {
+            return await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     createEmbed({
-                        title: 'Leveling System Set Up',
+                        title: 'Sistema de niveles configurado',
                         description:
-                            `The leveling system is now **enabled** and ready to go.\n\n` +
-                            `**Level-up Channel:** ${channel}\n` +
-                            `**XP per Message:** ${xpMin} – ${xpMax}\n` +
-                            `**XP Cooldown:** ${xpCooldown}s\n` +
-                            `**Level-up Message:** \`${message}\`\n\n` +
-                            `Usa \`/nivel dashboard\` to adjust any of these settings at any time.`,
+                            `El sistema de niveles está **activado** y listo.\n\n` +
+                            `**Canal de avisos:** ${channel}\n` +
+                            `**XP por mensaje:** ${xpMin} – ${xpMax}\n` +
+                            `**Tiempo de espera de XP:** ${xpCooldown}s\n` +
+                            `**Mensaje de subida de nivel:** \`${message}\`\n\n` +
+                            `Usa \`/level dashboard\` para cambiar esta configuración cuando quieras.`,
                         color: 'success',
                     }),
                 ],

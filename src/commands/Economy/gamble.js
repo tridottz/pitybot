@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
-import { getEconomyData, setEconomyData } from '../../utils/economia.js';
+import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 const BASE_WIN_CHANCE = 0.4;
 const CLOVER_WIN_BONUS = 0.1;
@@ -12,8 +12,8 @@ const GAMBLE_COOLDOWN = 5 * 60 * 1000;
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('apostar')
-        .setDescription('Apuesta tu dinero con la posibilidad de ganar más')
+        .setName('gamble')
+        .setDescription('Apuesta tu dinero para intentar ganar más')
         .addIntegerOption(option =>
             option
                 .setName('amount')
@@ -23,7 +23,7 @@ export default {
         ),
 
     execute: withErrorHandling(async (interaction, config, client) => {
-        const deferred = await InteractionAyudaer.safeDefer(interaction);
+        const deferred = await InteractionHelper.safeDefer(interaction);
         if (!deferred) return;
             
             const userId = interaction.user.id;
@@ -44,7 +44,7 @@ export default {
                 throw createError(
                     "Gamble cooldown active",
                     ErrorTypes.RATE_LIMIT,
-                    `You need to cool down before gambling again. Wait **${minutes}m ${seconds}s**.`,
+                    `Debes esperar antes de volver a apostar. Espera **${minutes} min ${seconds} s**.`,
                     { remaining, cooldownType: 'gamble' }
                 );
             }
@@ -66,14 +66,14 @@ export default {
             if (cloverCount > 0) {
                 winChance += CLOVER_WIN_BONUS;
                 userData.inventory["lucky_clover"] -= 1;
-                cloverMessage = `\n🍀 **Lucky Clover Consumed:** Your win chance was boosted!`;
+                cloverMessage = `\n🍀 **Trébol de la suerte usado:** ¡Aumentó tu probabilidad de ganar!`;
                 usedClover = true;
             }
             
             else if (charmCount > 0) {
                 winChance += CHARM_WIN_BONUS;
                 userData.inventory["lucky_charm"] -= 1;
-                cloverMessage = `\n🍀 **Lucky Charm Usad (${charmCount - 1} uses remaining):** Your win chance was boosted!`;
+                cloverMessage = `\n🍀 **Lucky Charm Used (${charmCount - 1} uses remaining):** ¡Aumentó tu probabilidad de ganar!`;
                 usedCharm = true;
             }
 
@@ -87,15 +87,15 @@ export default {
                 cashChange = amountWon - betAmount;
 
                 resultEmbed = successEmbed(
-                    "🎉 You Won!",
-                    `You successfully gambled and turned your **$${betAmount.toLocaleString()}** bet into **$${amountWon.toLocaleString()}**!${cloverMessage}`,
+                    "🎉 ¡Ganaste!",
+                    `Apostaste **$${betAmount.toLocaleString()}** y ahora tienes **$${amountWon.toLocaleString()}**.${cloverMessage}`,
                 );
             } else {
 cashChange = -betAmount;
 
                 resultEmbed = warningEmbed(
-                    "💔 You Lost...",
-                    `The dice rolled against you. You lost your **$${betAmount.toLocaleString()}** bet.`,
+                    "💔 Perdiste...",
+                    `La suerte no estuvo de tu lado. Perdiste los **$${betAmount.toLocaleString()}** que apostaste.`,
                 );
             }
 
@@ -107,14 +107,14 @@ userData.lastGamble = now;
             const newCash = userData.wallet;
 
             resultEmbed.addFields({
-                name: "New Cash Balance",
+                name: "Nuevo saldo en efectivo",
                 value: `$${newCash.toLocaleString()}`,
                 inline: true,
             });
 
             if (usedClover) {
                 resultEmbed.setFooter({
-                    text: `You have ${userData.inventory["lucky_clover"]} Lucky Clovers left. Win chance was ${Math.round(winChance * 100)}%.`,
+                    text: `Te quedan ${userData.inventory["lucky_clover"]} tréboles de la suerte. Tu probabilidad de ganar era del ${Math.round(winChance * 100)}%.`,
                 });
             } else if (usedCharm) {
                 resultEmbed.setFooter({
@@ -126,6 +126,6 @@ userData.lastGamble = now;
                 });
             }
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [resultEmbed] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [resultEmbed] });
     }, { command: 'gamble' })
 };

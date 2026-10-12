@@ -1,10 +1,10 @@
 import { EmbedBuilder } from 'discord.js';
-import { setBirthday } from '../../../services/cumpleanosService.js';
+import { setBirthday } from '../../../services/birthdayService.js';
 
-import { InteractionAyudaer } from '../../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../../utils/interactionHelper.js';
 export default {
     async execute(interaction, config, client) {
-        await InteractionAyudaer.safeDefer(interaction);
+        await InteractionHelper.safeDefer(interaction);
 
         const month = interaction.options.getInteger("mes");
         const day = interaction.options.getInteger("día");
@@ -18,7 +18,7 @@ export default {
             .setTitle('¡Cumpleaños establecido!')
             .setDescription(`Tu cumpleaños se estableció el **${result.data.monthName} ${result.data.day}**.`);
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [embed]
         });
     }

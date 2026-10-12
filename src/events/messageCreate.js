@@ -1,12 +1,12 @@
 import { Events } from 'discord.js';
 import { logger } from '../utils/logger.js';
-import { getLevelingConfig, getUsarLevelData } from '../services/niveling/niveling.js';
-import { addXp } from '../services/niveling/xpSystem.js';
+import { getLevelingConfig, getUserLevelData } from '../services/leveling/leveling.js';
+import { addXp } from '../services/leveling/xpSystem.js';
 import { checkRateLimit } from '../utils/rateLimiter.js';
 import { parsePrefixCommand } from '../utils/prefixParser.js';
 import { supportsPrefixExecution, executePrefixCommand, resolvePrefixAccessKey } from '../utils/messageAdapter.js';
-import { resolveCommandAlias, resolveSubcommandAlias } from '../config/comandos/commandAliases.js';
-import { getPrefixRestriction } from '../config/comandos/prefixRestrictions.js';
+import { resolveCommandAlias, resolveSubcommandAlias } from '../config/commands/commandAliases.js';
+import { getPrefixRestriction } from '../config/commands/prefixRestrictions.js';
 import { getGuildConfig } from '../services/config/guildConfig.js';
 import { getCommandPrefix, getBotMessage, isBotOwner, isCommandCategoryEnabled, isMaintenanceMode } from '../config/bot.js';
 import { enforceAbuseProtection, formatCooldownDuration } from '../utils/abuseProtection.js';
@@ -17,7 +17,7 @@ import {
   saveCountingGameConfig,
   isValidCountingMessage,
   recordCorrectCount,
-} from '../services/contaringGameService.js';
+} from '../services/countingGameService.js';
 
 const MESSAGE_XP_RATE_LIMIT_ATTEMPTS = 12;
 const MESSAGE_XP_RATE_LIMIT_WINDOW_MS = 10000;
@@ -87,7 +87,7 @@ async function handlePrefixCommand(message, client) {
     if (!isCommandCategoryEnabled(command.category)) {
       await message.channel.send({
         embeds: [createEmbed({
-          title: 'Feature Disabled',
+          title: 'Función desactivada',
           description: getBotMessage('commandDisabled'),
           color: 'error',
         })],
@@ -100,7 +100,7 @@ async function handlePrefixCommand(message, client) {
       if (restriction.blocked && restriction.reason) {
         const embed = createEmbed({
           title: 'Slash Command Only',
-          description: `${restriction.reason}\nUsa \`/${resolvedCommandName}\` instead.`,
+          description: `${restriction.reason}\nUse \`/${resolvedCommandName}\` instead.`,
           color: 'info',
         });
         await message.channel.send({ embeds: [embed] }).catch(() => {});
@@ -110,8 +110,8 @@ async function handlePrefixCommand(message, client) {
 
     if (!(await isCommandEnabled(client, message.guild.id, resolvePrefixAccessKey(command.data, args), command.category))) {
       const embed = createEmbed({
-        title: 'Command Disabled',
-        description: 'This command has been disabled for this server.',
+        title: 'Comando desactivado',
+        description: 'Este comando está desactivado en este servidor.',
         color: 'error',
       });
       await message.channel.send({ embeds: [embed] }).catch(() => {});
@@ -131,7 +131,7 @@ async function handlePrefixCommand(message, client) {
       const formattedCooldown = formatCooldownDuration(abuseProtection.remainingMs);
       const embed = createEmbed({
         title: 'Command Cooldown',
-        description: `This command is on cooldown. Please wait ${formattedCooldown} before trying again.`,
+        description: `Este comando está en espera. Aguarda ${formattedCooldown} antes de volver a intentarlo.`,
         color: 'error',
       });
       await message.channel.send({ embeds: [embed] }).catch(() => {});
@@ -155,18 +155,18 @@ async function handleCountingGame(message, client) {
 
     const content = message.content.trim();
     const validCount = isValidCountingMessage(content, config);
-    const invalidAttempt = !validCount || message.author.id === config.lastUsarId;
+    const invalidAttempt = !validCount || message.author.id === config.lastUserId;
 
     if (invalidAttempt) {
       await message.delete().catch(() => {});
       await saveCountingGameConfig(client, message.guild.id, {
         ...config,
         nextNumber: 1,
-        lastUsarId: null,
+        lastUserId: null,
         currentStreak: 0,
       });
 
-      const failureMessage = await message.channel.send(`❌ Count broken by <@${message.author.id}>. The sequence has been reset to **1**.`);
+      const failureMessage = await message.channel.send(`❌ <@${message.author.id}> rompió la secuencia. El conteo se reinició a **1**.`);
       setTimeout(() => {
         failureMessage.delete().catch(() => {});
       }, 10000);
@@ -209,7 +209,7 @@ async function handleLeveling(message, client) {
       }
     }
 
-    if (levelingConfig.blacklistedUsars?.includes(message.author.id)) {
+    if (levelingConfig.blacklistedUsers?.includes(message.author.id)) {
       return;
     }
 
@@ -217,7 +217,7 @@ async function handleLeveling(message, client) {
       return;
     }
 
-    const userData = await getUsarLevelData(client, message.guild.id, message.author.id);
+    const userData = await getUserLevelData(client, message.guild.id, message.author.id);
 
     const cooldownTime = levelingConfig.xpCooldown || 60;
     const now = Date.now();

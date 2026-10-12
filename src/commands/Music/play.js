@@ -1,19 +1,19 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { playQuery, replyMusicSuccess } from '../../services/musica/musicaActions.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { playQuery, replyMusicSuccess } from '../../services/music/musicActions.js';
 
 export default {
     slashOnly: true,
     category: 'Music',
     data: new SlashCommandBuilder()
-        .setName('reproducir')
-        .setDescription('Play a song or add it to the queue')
+        .setName('play')
+        .setDescription('Reproduce una canción o añádela a la cola')
         .addStringOption((opt) =>
-            opt.setName('query').setDescription('Song name or URL').setRequired(true),
+            opt.setName('query').setDescription('Nombre de la canción o URL').setRequired(true),
         ),
 
     async execute(interaction, config, client) {
-        const deferred = await InteractionAyudaer.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+        const deferred = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
         if (!deferred) {
             return;
         }

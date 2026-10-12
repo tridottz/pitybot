@@ -1,6 +1,6 @@
 import { successEmbed } from '../../utils/embeds.js';
-import { getGuildMusicData } from './reproducirerStore.js';
-import { applyPause, applyResume, getPlayer } from './musicaActions.js';
+import { getGuildMusicData } from './playerStore.js';
+import { applyPause, applyResume, getPlayer } from './musicActions.js';
 
 export async function handleMusicVoiceState(client, oldState, newState) {
     if (!client.riffy) {
@@ -24,27 +24,27 @@ export async function handleMusicVoiceState(client, oldState, newState) {
 
     const guildData = getGuildMusicData(guildId);
     const humansInChannel = voiceChannel.members.filter((member) => !member.user.bot);
-    const hasUsars = humansInChannel.size > 0;
+    const hasUsers = humansInChannel.size > 0;
 
-    if (!hasUsars && !player.paused && player.playing) {
+    if (!hasUsers && !player.paused && player.playing) {
         guildData.autoPaused = true;
         await applyPause(client, guildId);
         if (guildData.playerChannelId) {
             const channel = client.channels.cache.get(guildData.playerChannelId);
             if (channel) {
-                channel.send({ embeds: [successEmbed('Paused', 'Voice channel is empty. Music paused until someone joins.')] }).catch(() => null);
+                channel.send({ embeds: [successEmbed('En pausa', 'El canal de voz está vacío. La música se pausó hasta que alguien se una.')] }).catch(() => null);
             }
         }
         return;
     }
 
-    if (hasUsars && guildData.autoPaused && player.paused) {
+    if (hasUsers && guildData.autoPaused && player.paused) {
         await applyResume(client, guildId);
         guildData.autoPaused = false;
         if (guildData.playerChannelId) {
             const channel = client.channels.cache.get(guildData.playerChannelId);
             if (channel) {
-                channel.send({ embeds: [successEmbed('Resumed', 'Someone joined the voice channel. Playback resumed.')] }).catch(() => null);
+                channel.send({ embeds: [successEmbed('Reanudada', 'Alguien se unió al canal de voz. Se reanudó la reproducción.')] }).catch(() => null);
             }
         }
     }

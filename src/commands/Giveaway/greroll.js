@@ -8,17 +8,17 @@ import {
     createGiveawayEmbed, 
     createGiveawayButtons 
 } from '../../services/giveawayService.js';
-import { logEvent, EVENT_TYPES } from '../../services/registrosService.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { logEvent, EVENT_TYPES } from '../../services/loggingService.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("resortear")
-        .setDescription("Rerolls the winner(s) for an ended giveaway.")
+        .setName("greroll")
+        .setDescription("Vuelve a elegir a los ganadores de un sorteo finalizado.")
         .addStringOption((option) =>
             option
                 .setName("messageid")
-                .setDescription("The message ID of the ended giveaway.")
+                .setDescription("ID del mensaje del sorteo finalizado.")
                 .setRequired(true),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
@@ -35,9 +35,9 @@ export default {
 
         if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
             throw new TitanBotError(
-                'Usar lacks ManageGuild permission',
+                'User lacks ManageGuild permission',
                 ErrorTypes.PERMISSION,
-                "You need the 'Manage Server' permission to reroll a giveaway.",
+                "Necesitas el permiso 'Administrar servidor' para volver a sortear.",
                 { userId: interaction.user.id, guildId: interaction.guildId }
             );
         }
@@ -50,7 +50,7 @@ export default {
             throw new TitanBotError(
                 'Invalid message ID format',
                 ErrorTypes.VALIDATION,
-                'Please provide a valid message ID.',
+                'Proporciona un ID de mensaje válido.',
                 { providedId: messageId }
             );
         }
@@ -75,7 +75,7 @@ export default {
             throw new TitanBotError(
                 `Giveaway still active: ${messageId}`,
                 ErrorTypes.VALIDATION,
-                "This giveaway is still active. Please use `/finalizar-sorteo` to end it first.",
+                "Este sorteo sigue activo. Usa primero `/gend` para finalizarlo.",
                 { messageId, status: 'active' }
             );
         }
@@ -120,11 +120,11 @@ export default {
 
             logger.warn(`Could not find channel for giveaway ${messageId}, but saved new winners to database`);
 
-            return InteractionAyudaer.safeReply(interaction, {
+            return InteractionHelper.safeReply(interaction, {
                 embeds: [
                     successEmbed(
                         "Reroll Complete",
-                        "The new winners have been selected and saved to the database. Could not find channel to announce.",
+                        "Se seleccionaron los nuevos ganadores y se guardaron. No se encontró el canal para anunciarlos.",
                     ),
                 ],
                 flags: MessageFlags.Ephemeral,
@@ -155,11 +155,11 @@ export default {
                 : null;
             if (existingPingMsg) {
                 await existingPingMsg.edit({
-                    content: `🔄 **GIVEAWAY REROLL** 🔄 New winners for **${giveaway.prize}**: ${winnerMentions}!`,
+                    content: `🔄 **NUEVA ELECCIÓN DE GANADORES** 🔄 Nuevos ganadores del sorteo **${giveaway.prize}**: ${winnerMentions}.`,
                 });
             } else {
                 const newPingMsg = await channel.send({
-                    content: `🔄 **GIVEAWAY REROLL** 🔄 New winners for **${giveaway.prize}**: ${winnerMentions}!`,
+                    content: `🔄 **NUEVA ELECCIÓN DE GANADORES** 🔄 Nuevos ganadores del sorteo **${giveaway.prize}**: ${winnerMentions}.`,
                 });
                 updatedGiveaway.winnerPingMessageId = newPingMsg.id;
             }
@@ -172,22 +172,22 @@ export default {
                     guildId: interaction.guildId,
                     eventType: EVENT_TYPES.GIVEAWAY_REROLL,
                     data: {
-                        description: `Giveaway rerolled: ${giveaway.prize}`,
+                        description: `Se volvieron a elegir ganadores del sorteo: ${giveaway.prize}`,
                         channelId: giveaway.channelId,
                         userId: interaction.user.id,
                         fields: [
                             {
-                                name: 'Prize',
+                                name: 'Premio',
                                 value: giveaway.prize || 'Mystery Prize!',
                                 inline: true
                             },
                             {
-                                name: 'New Winners',
+                                name: 'Nuevos ganadores',
                                 value: winnerMentions,
                                 inline: false
                             },
                             {
-                                name: 'Total Entries',
+                                name: 'Total de participantes',
                                 value: participants.length.toString(),
                                 inline: true
                             }
@@ -198,7 +198,7 @@ export default {
                 logger.debug('Error logging giveaway reroll:', logError);
             }
 
-            return InteractionAyudaer.safeReply(interaction, {
+            return InteractionHelper.safeReply(interaction, {
                 embeds: [
                     successEmbed(
                         "Reroll Complete",
@@ -219,7 +219,7 @@ export default {
         const newRow = createGiveawayButtons(true);
 
         await message.edit({
-            content: "🔄 **GIVEAWAY REROLLED** 🔄",
+                content: "🔄 **NUEVOS GANADORES DEL SORTEO** 🔄",
             embeds: [newEmbed],
             components: [newRow],
         });
@@ -233,11 +233,11 @@ export default {
             : null;
         if (existingPingMsg) {
             await existingPingMsg.edit({
-                content: `🔄 **REROLL WINNERS** 🔄 CONGRATULATIONS ${winnerMentions}! You are the new winner(s) for the **${giveaway.prize}** giveaway! Please contact the host <@${giveaway.hostId}> to claim your prize.`,
+                content: `🔄 **NUEVA ELECCIÓN DE GANADORES** 🔄 ¡Felicidades ${winnerMentions}! Ganaste el sorteo de **${giveaway.prize}**. Contacta a quien lo organizó <@${giveaway.hostId}> para reclamar tu premio.`,
             });
         } else {
             const newPingMsg = await channel.send({
-                content: `🔄 **REROLL WINNERS** 🔄 CONGRATULATIONS ${winnerMentions}! You are the new winner(s) for the **${giveaway.prize}** giveaway! Please contact the host <@${giveaway.hostId}> to claim your prize.`,
+                content: `🔄 **NUEVA ELECCIÓN DE GANADORES** 🔄 ¡Felicidades ${winnerMentions}! Ganaste el sorteo de **${giveaway.prize}**. Contacta a quien lo organizó <@${giveaway.hostId}> para reclamar tu premio.`,
             });
             updatedGiveaway.winnerPingMessageId = newPingMsg.id;
         }
@@ -250,22 +250,22 @@ export default {
                 guildId: interaction.guildId,
                 eventType: EVENT_TYPES.GIVEAWAY_REROLL,
                 data: {
-                    description: `Giveaway rerolled: ${giveaway.prize}`,
+                    description: `Se volvieron a elegir ganadores del sorteo: ${giveaway.prize}`,
                     channelId: giveaway.channelId,
                     userId: interaction.user.id,
                     fields: [
                         {
-                            name: 'Prize',
+                            name: 'Premio',
                             value: giveaway.prize || 'Mystery Prize!',
                             inline: true
                         },
                         {
-                            name: 'New Winners',
+                            name: 'Nuevos ganadores',
                             value: winnerMentions,
                             inline: false
                         },
                         {
-                            name: 'Total Entries',
+                            name: 'Total de participantes',
                             value: participants.length.toString(),
                             inline: true
                         }
@@ -276,11 +276,11 @@ export default {
             logger.debug('Error logging giveaway reroll event:', logError);
         }
 
-        return InteractionAyudaer.safeReply(interaction, {
+        return InteractionHelper.safeReply(interaction, {
             embeds: [
                 successEmbed(
                     "Reroll Successful ✅",
-                    `Successfully rerolled the giveaway for **${giveaway.prize}** in ${channel}. Selected ${newWinners.length} new winner(s).`,
+                    `Se volvió a sortear **${giveaway.prize}** en ${channel}. Se seleccionaron ${newWinners.length} nuevo(s) ganador(es).`,
                 ),
             ],
             flags: MessageFlags.Ephemeral,

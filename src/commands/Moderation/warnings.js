@@ -3,24 +3,24 @@ import { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuild
 import { createEmbed } from '../../utils/embeds.js';
 import { logEvent } from '../../utils/moderation.js';
 import { logger } from '../../utils/logger.js';
-import { WarningService } from '../../services/moderation/advertiringService.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { WarningService } from '../../services/moderation/warningService.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("advertencias")
-        .setDescription("View all warnings for a user")
-        .addUsarOption((o) =>
+        .setName("warnings")
+        .setDescription("Consulta todas las advertencias de un usuario")
+        .addUserOption((o) =>
             o
                 .setName("target")
                 .setRequired(true)
-                .setDescription("Usar to check warnings for"),
+                .setDescription("Usuario cuyas advertencias quieres consultar"),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
     category: "moderation",
 
     async execute(interaction, config, client) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction);
+        const deferSuccess = await InteractionHelper.safeDefer(interaction);
         if (!deferSuccess) {
             logger.warn(`Warnings interaction defer failed`, {
                 userId: interaction.user.id,
@@ -30,18 +30,18 @@ export default {
             return;
         }
 
-        const target = interaction.options.getUsar("target");
+        const target = interaction.options.getUser("target");
         const guildId = interaction.guildId;
 
         const validWarnings = await WarningService.getWarnings(guildId, target.id);
         const totalWarns = validWarnings.length;
 
         if (totalWarns === 0) {
-            await InteractionAyudaer.safeEditReply(interaction, {
+            await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     createEmbed({
-                        title: `Warnings: ${target.tag}`,
-                        description: "This user has no recorded warnings.",
+                        title: `Advertencias: ${target.tag}`,
+                        description: "Este usuario no tiene advertencias registradas.",
                     }).setColor(getColor('success')),
                 ],
             });
@@ -49,8 +49,8 @@ export default {
         }
 
         const embed = createEmbed({
-            title: `Warnings: ${target.tag}`,
-            description: `Total Warnings: **${totalWarns}**`,
+            title: `Advertencias: ${target.tag}`,
+            description: `Total de advertencias: **${totalWarns}**`,
         }).setColor(getColor('warning'));
 
         const warningFields = validWarnings
@@ -58,7 +58,7 @@ export default {
                 const discordTimestamp = Math.floor(w.timestamp / 1000);
                 return {
                     name: `[#${i + 1}] Motivo: ${w.reason.substring(0, 100)}`,
-                    value: `**Moderator:** <@${w.moderatorId}>\n**Date:** <t:${discordTimestamp}:F> (<t:${discordTimestamp}:R>)`,
+                    value: `**Moderador:** <@${w.moderatorId}>\n**Fecha:** <t:${discordTimestamp}:F> (<t:${discordTimestamp}:R>)`,
                     inline: false,
                 };
             })
@@ -69,11 +69,11 @@ export default {
         const actionRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId(`warning_delete_specific:${target.id}:${interaction.user.id}`)
-                .setLabel('Delete Specific Warning')
+                .setLabel('Eliminar una advertencia')
                 .setStyle(ButtonStyle.Danger),
             new ButtonBuilder()
                 .setCustomId(`warning_clear_all:${target.id}:${interaction.user.id}`)
-                .setLabel('Clear All Warnings')
+                .setLabel('Borrar todas las advertencias')
                 .setStyle(ButtonStyle.Danger),
         );
 
@@ -93,6 +93,6 @@ export default {
             },
         });
 
-        await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed], components: [actionRow] });
+        await InteractionHelper.safeEditReply(interaction, { embeds: [embed], components: [actionRow] });
     },
 };

@@ -2,14 +2,14 @@ import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 import { getColor } from '../../config/bot.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
-        .setName('hora-unix')
-        .setDescription('Obtiene la marca de tiempo Unix actual'),
+        .setName('unixtime')
+        .setDescription('Obtén la marca de tiempo Unix actual'),
 
     async execute(interaction) {
-        await InteractionAyudaer.safeExecute(
+        await InteractionHelper.safeExecute(
             interaction,
             async () => {
                 const now = new Date();
@@ -24,11 +24,11 @@ export default {
                 );
                 embed.setColor(getColor('success'));
 
-                await InteractionAyudaer.safeEditReply(interaction, {
+                await InteractionHelper.safeEditReply(interaction, {
                     embeds: [embed],
                 });
             },
-            'Failed to get unix timestamp. Please try again.',
+            'No se pudo obtener la marca de tiempo Unix. Inténtalo de nuevo.',
             {
                 autoDefer: true,
                 deferOptions: { flags: MessageFlags.Ephemeral }

@@ -3,7 +3,7 @@
 // Rules:
 // 1. Commands/handlers: throw TitanBotError (via createError) or let errors propagate;
 //    interactionCreate routes them through handleInteractionError. For expected user-facing
-//    failures (validation, cooldowns), use replyUsarError.
+//    failures (validation, cooldowns), use replyUserError.
 //    Do NOT wrap a command's execute() body in a try/catch whose only purpose is to call
 //    handleInteractionError — that is redundant because interactionCreate already catches
 //    command.execute errors and calls handleInteractionError with COMMAND_ERROR_SUBTYPES.
@@ -14,13 +14,13 @@
 //    (re-exported here) so unknown errors get typed with service/operation context.
 // 3. Background tasks (cron, timers): wrap with handleTaskError / runSafeTask.
 // 4. Set a specific userMessage when you know the cause; use ErrorTypes, don't invent titles.
-// 5. Success/info/advertiring replies use successEmbed / infoEmbed / warningEmbed.
+// 5. Success/info/warning replies use successEmbed / infoEmbed / warningEmbed.
 
 import { logger } from './logger.js';
-import { buildUsarErrorEmbed } from './embeds.js';
+import { buildUserErrorEmbed } from './embeds.js';
 import { MessageFlags } from 'discord.js';
 import { getErrorMetadata, getDefaultErrorCodeByType, resolveErrorCode, ErrorCodes } from './errorRegistry.js';
-import { InteractionAyudaer } from './interactionAyudaer.js';
+import { InteractionHelper } from './interactionHelper.js';
 
 // Re-export so consumers only ever need to import from errorHandler.js
 export { ErrorCodes, getErrorMetadata, resolveErrorCode, getDefaultErrorCodeByType } from './errorRegistry.js';
@@ -97,7 +97,7 @@ const USER_FACING_ERROR_HINTS = [
     /^could not find\b/i,
 ];
 
-function isUsarFacingPlainError(error) {
+function isUserFacingPlainError(error) {
     if (error instanceof TitanBotError) {
         return false;
     }
@@ -131,7 +131,7 @@ function isUsarFacingPlainError(error) {
     return false;
 }
 
-function inferErrorTypeFromUsarMessage(message = '') {
+function inferErrorTypeFromUserMessage(message = '') {
     const lowerMessage = message.toLowerCase();
 
     if (lowerMessage.includes('permission') || lowerMessage.includes('not allowed')) {
@@ -167,12 +167,12 @@ function normalizeInteractionError(error, context = {}) {
         return error;
     }
 
-    if (!isUsarFacingPlainError(error)) {
+    if (!isUserFacingPlainError(error)) {
         return error;
     }
 
     const message = error.message.trim();
-    const type = inferErrorTypeFromUsarMessage(message);
+    const type = inferErrorTypeFromUserMessage(message);
 
     return createError(message, type, message, {
         ...context,
@@ -226,8 +226,8 @@ export function categorizeError(error) {
         return ErrorTypes.CONFIGURATION;
     }
 
-    if (isUsarFacingPlainError(error)) {
-        return inferErrorTypeFromUsarMessage(error.message);
+    if (isUserFacingPlainError(error)) {
+        return inferErrorTypeFromUserMessage(error.message);
     }
 
     if (error?.name === 'DiscordAPIError' || error?.name === 'HTTPError') {
@@ -237,71 +237,71 @@ export function categorizeError(error) {
     return ErrorTypes.UNKNOWN;
 }
 
-const UsarMessages = {
+const UserMessages = {
     [ErrorTypes.VALIDATION]: {
-        default: 'Please check your input and try again.',
-        missing_required: "You're missing some required information. Check the command options and try again.",
-        invalid_format: 'The format you provided is incorrect. Check the command usage and try again.'
+        default: 'Revisa los datos e inténtalo de nuevo.',
+        missing_required: 'Falta información obligatoria. Revisa las opciones del comando e inténtalo de nuevo.',
+        invalid_format: 'El formato no es correcto. Revisa cómo se usa el comando e inténtalo de nuevo.'
     },
     [ErrorTypes.PERMISSION]: {
-        default: "You don't have permission to do that.",
-        user_permission: "You don't have permission to use this command.",
-        bot_permission: "I don't have the permissions needed to do that in this channel."
+        default: 'No tienes permiso para hacer eso.',
+        user_permission: 'No tienes permiso para usar este comando.',
+        bot_permission: 'No tengo los permisos necesarios para hacerlo en este canal.'
     },
     [ErrorTypes.CONFIGURATION]: {
-        default: 'This feature is not set up yet. Ask a server administrator to configure it.',
-        missing_config: 'This feature has not been configured yet. Ask a server administrator to set it up.',
-        invalid_config: 'The server configuration for this feature is invalid. Ask a server administrator to review it.'
+        default: 'Esta función aún no está configurada. Pide a un administrador del servidor que la configure.',
+        missing_config: 'Esta función aún no está configurada. Pide a un administrador del servidor que la configure.',
+        invalid_config: 'La configuración de esta función no es válida. Pide a un administrador del servidor que la revise.'
     },
     [ErrorTypes.DATABASE]: {
-        default: 'Something went wrong while saving data. Please try again in a moment.',
-        connection_failed: 'I could not reach the database. Please try again later.',
-        timeout: 'That took too long to complete. Please try again.'
+        default: 'Ocurrió un error al guardar los datos. Inténtalo de nuevo en un momento.',
+        connection_failed: 'No se pudo conectar con la base de datos. Inténtalo más tarde.',
+        timeout: 'La operación tardó demasiado. Inténtalo de nuevo.'
     },
     [ErrorTypes.NETWORK]: {
-        default: 'I could not reach an external service. Please try again in a moment.',
-        timeout: 'The request timed out. Please try again.',
-        unreachable: 'The service is unavailable right now. Please try again later.'
+        default: 'No se pudo conectar con un servicio externo. Inténtalo de nuevo en un momento.',
+        timeout: 'La solicitud tardó demasiado. Inténtalo de nuevo.',
+        unreachable: 'El servicio no está disponible ahora. Inténtalo más tarde.'
     },
     [ErrorTypes.DISCORD_API]: {
-        default: 'Discord rejected that request. Please try again in a moment.',
-        rate_limit: "You're doing that too quickly. Wait a moment and try again.",
-        forbidden: "I'm not allowed to do that here. Check my role permissions.",
-        interaction_expired: 'That interaction expired. Please run the command again.',
-        already_acknowledged: 'That action was already handled. Ejecuta the command again if you still need help.',
-        invalid_form_body: 'Discord rejected the request payload. Try again with different input.'
+        default: 'Discord rechazó la solicitud. Inténtalo de nuevo en un momento.',
+        rate_limit: 'Estás realizando acciones demasiado rápido. Espera un momento e inténtalo de nuevo.',
+        forbidden: 'No tengo permiso para hacer eso aquí. Revisa mis permisos y mi rol.',
+        interaction_expired: 'La interacción caducó. Ejecuta el comando de nuevo.',
+        already_acknowledged: 'Esta acción ya se atendió. Ejecuta el comando de nuevo si aún necesitas ayuda.',
+        invalid_form_body: 'Discord rechazó los datos del formulario. Inténtalo con otros datos.'
     },
     [ErrorTypes.USER_INPUT]: {
-        default: 'There was a problem with your request. Check your input and try again.',
-        invalid_user: 'I could not find that user. Check the mention or ID and try again.',
-        invalid_channel: 'I could not find that channel. Check the mention or ID and try again.'
+        default: 'Hubo un problema con tu solicitud. Revisa los datos e inténtalo de nuevo.',
+        invalid_user: 'No se encontró al usuario. Revisa la mención o el ID e inténtalo de nuevo.',
+        invalid_channel: 'No se encontró el canal. Revisa la mención o el ID e inténtalo de nuevo.'
     },
     [ErrorTypes.RATE_LIMIT]: {
-        default: "You're doing that too quickly. Wait a moment and try again.",
-        command_cooldown: 'This command is on cooldown. Wait before using it again.',
-        global_rate_limit: 'Discord is rate limiting requests. Wait a moment and try again.'
+        default: 'Estás realizando acciones demasiado rápido. Espera un momento e inténtalo de nuevo.',
+        command_cooldown: 'Este comando está en espera. Aguarda antes de volver a usarlo.',
+        global_rate_limit: 'Discord está limitando las solicitudes. Espera un momento e inténtalo de nuevo.'
     },
     [ErrorTypes.UNKNOWN]: {
-        default: 'Something went wrong. Please try again in a moment.',
-        unexpected: 'An unexpected error occurred. Please try again later.',
-        warn_failed: 'I could not warn that member. Check my permissions and role hierarchy, then try again.',
-        kick_failed: 'I could not kick that member. Check my permissions and role hierarchy, then try again.',
-        ban_failed: 'I could not ban that member. Check my permissions and role hierarchy, then try again.',
-        unban_failed: 'I could not unban that user. Check my permissions and try again.',
-        timeout_failed: 'I could not timeout that member. Check my permissions and role hierarchy, then try again.',
-        untimeout_failed: 'I could not remove the timeout. Check my permissions and try again.'
+        default: 'Algo salió mal. Inténtalo de nuevo en un momento.',
+        unexpected: 'Ocurrió un error inesperado. Inténtalo de nuevo más tarde.',
+        warn_failed: 'No pude advertir a ese miembro. Comprueba mis permisos y la jerarquía de roles e inténtalo de nuevo.',
+        kick_failed: 'No pude expulsar a ese miembro. Comprueba mis permisos y la jerarquía de roles e inténtalo de nuevo.',
+        ban_failed: 'No pude expulsar permanentemente a ese miembro. Comprueba mis permisos y la jerarquía de roles e inténtalo de nuevo.',
+        unban_failed: 'No pude quitar el veto a ese usuario. Comprueba mis permisos e inténtalo de nuevo.',
+        timeout_failed: 'No pude aplicar el tiempo de espera a ese miembro. Comprueba mis permisos y la jerarquía de roles e inténtalo de nuevo.',
+        untimeout_failed: 'No pude quitar el tiempo de espera. Comprueba mis permisos e inténtalo de nuevo.'
     }
 };
 
-export function getUsarMessage(error, context = {}) {
+export function getUserMessage(error, context = {}) {
     const type = categorizeError(error);
-    const messages = UsarMessages[type] || UsarMessages[ErrorTypes.UNKNOWN];
+    const messages = UserMessages[type] || UserMessages[ErrorTypes.UNKNOWN];
 
     if (error.userMessage) {
         return error.userMessage;
     }
 
-    if (isUsarFacingPlainError(error)) {
+    if (isUserFacingPlainError(error)) {
         return error.message.trim();
     }
 
@@ -321,8 +321,8 @@ export function getUsarMessage(error, context = {}) {
         return messages[context.subtype];
     }
 
-    if (context.subtype && UsarMessages[ErrorTypes.UNKNOWN][context.subtype]) {
-        return UsarMessages[ErrorTypes.UNKNOWN][context.subtype];
+    if (context.subtype && UserMessages[ErrorTypes.UNKNOWN][context.subtype]) {
+        return UserMessages[ErrorTypes.UNKNOWN][context.subtype];
     }
 
     return messages.default;
@@ -363,12 +363,12 @@ function buildErrorLogData(interaction, error, errorType, context = {}) {
 }
 
 function logInteractionError(error, errorType, logData) {
-    const isUsarError = USER_ERROR_TYPES.has(errorType);
+    const isUserError = USER_ERROR_TYPES.has(errorType);
     const isExpectedError = Boolean(error?.context?.expected === true || error?.context?.suppressErrorLog === true);
 
-    if (isUsarError || isExpectedError) {
+    if (isUserError || isExpectedError) {
         if (errorType !== ErrorTypes.RATE_LIMIT) {
-            logger.debug(`Usar Error [${errorType.toUpperCase()}]: ${error.userMessage || error.message}`, logData);
+            logger.debug(`User Error [${errorType.toUpperCase()}]: ${error.userMessage || error.message}`, logData);
         }
     } else {
         logger.error(`System Error [${errorType.toUpperCase()}]`, {
@@ -390,7 +390,7 @@ async function sendErrorResponse(interaction, embed, context = {}) {
             return false;
         }
 
-        const coordinator = InteractionAyudaer.getCoordinator(interaction);
+        const coordinator = InteractionHelper.getCoordinator(interaction);
         if (coordinator?.isUsageFinalized()) {
             return false;
         }
@@ -465,7 +465,7 @@ async function sendErrorResponse(interaction, embed, context = {}) {
 /**
  * Reply with a typed user-facing error (early-return validation, permission checks, etc.).
  */
-export async function replyUsarError(interaction, {
+export async function replyUserError(interaction, {
     type = ErrorTypes.UNKNOWN,
     message,
     subtype = null,
@@ -474,19 +474,19 @@ export async function replyUsarError(interaction, {
 } = {}) {
     const errorType = type || ErrorTypes.UNKNOWN;
     const syntheticError = message
-        ? createError('Usar error', errorType, message, { expected: true, ...context })
-        : createError('Usar error', errorType, null, { expected: true, ...context });
+        ? createError('User error', errorType, message, { expected: true, ...context })
+        : createError('User error', errorType, null, { expected: true, ...context });
 
-    const userMessage = getUsarMessage(syntheticError, { subtype, ...context });
+    const userMessage = getUserMessage(syntheticError, { subtype, ...context });
     const { logData, traceId } = buildErrorLogData(interaction, syntheticError, errorType, {
         ...context,
         subtype,
-        source: context.source || 'replyUsarError'
+        source: context.source || 'replyUserError'
     });
 
     logInteractionError(syntheticError, errorType, logData);
 
-    const embed = buildUsarErrorEmbed(errorType, userMessage);
+    const embed = buildUserErrorEmbed(errorType, userMessage);
     return sendErrorResponse(interaction, embed, { ...context, traceId, ephemeral, subtype });
 }
 
@@ -506,18 +506,18 @@ function buildErrorReference(resolvedErrorCode, traceId) {
 export async function handleInteractionError(interaction, error, context = {}) {
     const normalizedError = normalizeInteractionError(error, context);
     const errorType = categorizeError(normalizedError);
-    const userMessage = getUsarMessage(normalizedError, context);
+    const userMessage = getUserMessage(normalizedError, context);
     const { logData, traceId, resolvedErrorCode } = buildErrorLogData(interaction, normalizedError, errorType, context);
 
     logInteractionError(normalizedError, errorType, logData);
 
     // System errors get a reference code so users can report them and we can grep logs.
-    const isUsarError = USER_ERROR_TYPES.has(errorType) || normalizedError?.context?.expected === true;
-    const description = isUsarError
+    const isUserError = USER_ERROR_TYPES.has(errorType) || normalizedError?.context?.expected === true;
+    const description = isUserError
         ? userMessage
         : `${userMessage}\n\n-# Ref: \`${buildErrorReference(resolvedErrorCode, traceId)}\``;
 
-    const embed = buildUsarErrorEmbed(errorType, description);
+    const embed = buildUserErrorEmbed(errorType, description);
     await sendErrorResponse(interaction, embed, { ...context, traceId });
 }
 
@@ -599,8 +599,8 @@ export default {
     ErrorTypes,
     TitanBotError,
     categorizeError,
-    getUsarMessage,
-    replyUsarError,
+    getUserMessage,
+    replyUserError,
     handleInteractionError,
     handleTaskError,
     runSafeTask,

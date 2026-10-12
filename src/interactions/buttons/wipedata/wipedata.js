@@ -1,6 +1,6 @@
 import {
   wipedataConfirmHandler,
   wipedataCancelHandler,
-} from '../../../handlers/borrar-datosButtons.js';
+} from '../../../handlers/wipedataButtons.js';
 
 export default [wipedataConfirmHandler, wipedataCancelHandler];

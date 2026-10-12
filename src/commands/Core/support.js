@@ -2,25 +2,25 @@ import { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, Mess
 import { createEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 const SUPPORT_SERVER_URL = "https://discord.gg/QnWNz2dKCE";
 export default {
     data: new SlashCommandBuilder()
-    .setName("soporte")
+    .setName("support")
     .setDescription("Obtén el enlace al servidor de soporte"),
 
   async execute(interaction) {
     try {
       const supportButton = new ButtonBuilder()
-        .setLabel("Join Servidor de soporte")
+        .setLabel("Unirse al servidor de soporte")
         .setStyle(ButtonStyle.Link)
         .setURL(SUPPORT_SERVER_URL);
 
       const actionRow = new ActionRowBuilder().addComponents(supportButton);
 
-      await InteractionAyudaer.safeReply(interaction, {
+      await InteractionHelper.safeReply(interaction, {
         embeds: [
-          createEmbed({ title: "Need Ayuda?", description: "Join our official support server for assistance, report bugs, or suggest features. If you are customizing this bot, remember to change the link in the code!" }),
+          createEmbed({ title: "¿Necesitas ayuda?", description: "Únete a nuestro servidor oficial de soporte para pedir ayuda, reportar errores o sugerir funciones." }),
         ],
         components: [actionRow],
         flags: MessageFlags.Ephemeral,
@@ -29,8 +29,8 @@ export default {
       logger.error('Support command error:', error);
       
       try {
-        return await InteractionAyudaer.safeReply(interaction, {
-          embeds: [createEmbed({ title: 'System Error', description: 'Could not display support information.', color: 'error' })],
+        return await InteractionHelper.safeReply(interaction, {
+          embeds: [createEmbed({ title: 'Error del sistema', description: 'No se pudo mostrar la información de soporte.', color: 'error' })],
           flags: MessageFlags.Ephemeral,
         });
       } catch (replyError) {

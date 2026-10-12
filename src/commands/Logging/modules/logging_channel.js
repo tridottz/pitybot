@@ -1,14 +1,14 @@
 import { PermissionsBitField, ChannelType } from 'discord.js';
-import { setLogChannel } from '../../../services/registrosService.js';
+import { setLogChannel } from '../../../services/loggingService.js';
 import { successEmbed } from '../../../utils/embeds.js';
-import { InteractionAyudaer } from '../../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../../utils/interactionHelper.js';
 import { logger } from '../../../utils/logger.js';
 
-import { replyUsarError, ErrorTypes } from '../../../utils/errorHandler.js';
+import { replyUserError, ErrorTypes } from '../../../utils/errorHandler.js';
 const DESTINATION_LABELS = {
-  audit: 'Audit Log',
-  applications: 'Applications',
-  reports: 'Reports',
+  audit: 'Registros de auditoría',
+  applications: 'Postulaciones',
+  reports: 'Reportes',
 };
 
 export default {
@@ -16,10 +16,10 @@ export default {
   async execute(interaction, config, client) {
     try {
       if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
-        return await replyUsarError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need **Manage Server** permissions to configure logging channels.' });
+        return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Necesitas el permiso **Gestionar servidor** para configurar los canales de registro.' });
       }
 
-      await InteractionAyudaer.safeDefer(interaction, { ephemeral: true });
+      await InteractionHelper.safeDefer(interaction, { ephemeral: true });
 
       const destination = interaction.options.getString('destination');
       const channel = interaction.options.getChannel('channel');
@@ -27,34 +27,34 @@ export default {
 
       if (disable) {
         await setLogChannel(client, interaction.guildId, destination, null);
-        return InteractionAyudaer.safeEditReply(interaction, {
+        return InteractionHelper.safeEditReply(interaction, {
           embeds: [successEmbed(
-            'Channel Cleared',
-            `The **${DESTINATION_LABELS[destination]}** channel has been removed.`,
+            'Canal quitado',
+            `Se quitó el canal de **${DESTINATION_LABELS[destination]}**.`,
           )],
         });
       }
 
       if (!channel || channel.type !== ChannelType.GuildText) {
-        return await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please provide a valid text channel.' });
+        return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Proporciona un canal de texto válido.' });
       }
 
       const botPerms = channel.permissionsFor(interaction.guild.members.me);
       if (!botPerms?.has(['ViewChannel', 'SendMessages', 'EmbedLinks'])) {
-        return await replyUsarError(interaction, { type: ErrorTypes.PERMISSION, message: `I need **View Channel**, **Send Messages**, and **Embed Links** in ${channel}.` });
+        return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: `Necesito los permisos **Ver canal**, **Enviar mensajes** e **Insertar enlaces** en ${channel}.` });
       }
 
       await setLogChannel(client, interaction.guildId, destination, channel.id);
 
-      return InteractionAyudaer.safeEditReply(interaction, {
+      return InteractionHelper.safeEditReply(interaction, {
         embeds: [successEmbed(
-          'Channel Updated',
-          `**${DESTINATION_LABELS[destination]}** logs will be sent to ${channel}.\nUsa \`/registros dashboard\` to toggle event categories.`,
+          'Canal actualizado',
+          `Los registros de **${DESTINATION_LABELS[destination]}** se enviarán a ${channel}.\nUsa \`/logging dashboard\` para activar o desactivar categorías de eventos.`,
         )],
       });
     } catch (error) {
       logger.error('logging_channel error:', error);
-      await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Failed to update the log channel.' });
+      await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'No se pudo actualizar el canal de registro.' });
     }
   },
 };

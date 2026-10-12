@@ -1,41 +1,41 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
-import { getFromDb, setInDb, deleteFromDb, getUsarNotesKey, getUsarNotesListKey } from '../../utils/database.js';
+import { getFromDb, setInDb, deleteFromDb, getUserNotesKey, getUserNotesListKey } from '../../utils/database.js';
 import { sanitizeInput } from '../../utils/validation.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName("notas-usuario")
-        .setDescription("Manage user notes for moderation purposes")
+        .setName("usernotes")
+        .setDescription("Administra notas de usuarios para fines de moderación")
         .addSubcommand(subcommand =>
             subcommand
                 .setName("add")
-                .setDescription("Add a note to a user")
-                .addUsarOption(option =>
+                .setDescription("Añade una nota a un usuario")
+                .addUserOption(option =>
                     option
                         .setName("target")
-                        .setDescription("The user to add a note for")
+                        .setDescription("Usuario al que quieres añadir una nota")
                         .setRequired(true)
                 )
                 .addStringOption(option =>
                     option
                         .setName("note")
-                        .setDescription("The note to add")
+                        .setDescription("Nota que quieres añadir")
                         .setRequired(true)
                 )
                 .addStringOption(option =>
                     option
                         .setName("type")
-                        .setDescription("Type of note")
+                        .setDescription("Tipo de nota")
                         .addChoices(
-                            { name: "Warning", value: "warning" },
-                            { name: "Positive", value: "positive" },
+                            { name: "Advertencia", value: "warning" },
+                            { name: "Positiva", value: "positive" },
                             { name: "Neutral", value: "neutral" },
-                            { name: "Alert", value: "alert" }
+                            { name: "Alerta", value: "alert" }
                         )
                         .setRequired(false)
                 )
@@ -43,28 +43,28 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName("view")
-                .setDescription("View notes for a user")
-                .addUsarOption(option =>
+                .setDescription("Consulta las notas de un usuario")
+                .addUserOption(option =>
                     option
                         .setName("target")
-                        .setDescription("The user to view notes for")
+                        .setDescription("Usuario cuyas notas quieres consultar")
                         .setRequired(true)
                 )
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName("remove")
-                .setDescription("Remove a specific note from a user")
-                .addUsarOption(option =>
+                .setDescription("Quita una nota específica de un usuario")
+                .addUserOption(option =>
                     option
                         .setName("target")
-                        .setDescription("The user to remove a note from")
+                        .setDescription("Usuario al que quieres quitar una nota")
                         .setRequired(true)
                 )
                 .addIntegerOption(option =>
                     option
                         .setName("index")
-                        .setDescription("The index of the note to remove")
+                        .setDescription("Número de la nota que quieres quitar")
                         .setRequired(true)
                         .setMinValue(1)
                 )
@@ -72,11 +72,11 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName("clear")
-                .setDescription("Clear all notes for a user")
-                .addUsarOption(option =>
+                .setDescription("Borra todas las notas de un usuario")
+                .addUserOption(option =>
                     option
                         .setName("target")
-                        .setDescription("The user to clear notes for")
+                        .setDescription("Usuario cuyas notas quieres borrar")
                         .setRequired(true)
                 )
         )
@@ -85,49 +85,49 @@ export default {
 
     async execute(interaction, config, client) {
         const subcommand = interaction.options.getSubcommand();
-        const targetUsar = interaction.options.getUsar("target");
+        const targetUser = interaction.options.getUser("target");
         const guildId = interaction.guild.id;
 
         if (subcommand !== "view" && subcommand !== "remove" && subcommand !== "clear" && subcommand !== "add") {
-            return await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please select a valid subcommand.' });
+            return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Selecciona un subcomando válido.' });
         }
 
         let notes = [];
-        if (targetUsar) {
-            const notesKey = getUsarNotesKey(guildId, targetUsar.id);
+        if (targetUser) {
+            const notesKey = getUserNotesKey(guildId, targetUser.id);
             notes = await getFromDb(notesKey, []);
         }
 
         try {
             switch (subcommand) {
                 case "add":
-                    return await handleAddNote(interaction, targetUsar, notes, guildId);
+                    return await handleAddNote(interaction, targetUser, notes, guildId);
                 case "view":
-                    return await handleViewNotes(interaction, targetUsar, notes);
+                    return await handleViewNotes(interaction, targetUser, notes);
                 case "remove":
-                    return await handleRemoveNote(interaction, targetUsar, notes, guildId);
+                    return await handleRemoveNote(interaction, targetUser, notes, guildId);
                 case "clear":
-                    return await handleClearNotes(interaction, targetUsar, notes, guildId);
+                    return await handleClearNotes(interaction, targetUser, notes, guildId);
                 default:
-                    return await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please select a valid subcommand.' });
+                    return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Selecciona un subcomando válido.' });
             }
         } catch (error) {
             logger.error(`Error in usernotes command (${subcommand}):`, error);
-            return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while processing your request. Please try again later.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al procesar tu solicitud. Inténtalo de nuevo más tarde.' });
         }
     }
 };
 
-async function handleAddNote(interaction, targetUsar, notes, guildId) {
+async function handleAddNote(interaction, targetUser, notes, guildId) {
     let note = interaction.options.getString("note").trim();
     const type = interaction.options.getString("type") || "neutral";
 
     if (note.length > 1000) {
-        return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Notes must be 1000 characters or less.' });
+        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Las notas deben tener 1000 caracteres o menos.' });
     }
 
     if (note.length === 0) {
-        return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Note cannot be empty.' });
+        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'La nota no puede estar vacía.' });
     }
 
     note = sanitizeInput(note);
@@ -143,31 +143,31 @@ async function handleAddNote(interaction, targetUsar, notes, guildId) {
 
     notes.push(noteData);
 
-    const notesKey = getUsarNotesKey(guildId, targetUsar.id);
+    const notesKey = getUserNotesKey(guildId, targetUser.id);
     await setInDb(notesKey, notes);
 
     const typeInfo = getNoteTypeInfo(type);
 
-    return InteractionAyudaer.safeReply(interaction, {
+    return InteractionHelper.safeReply(interaction, {
         embeds: [
             successEmbed(
-                `${typeInfo.emoji} Note Added`,
-                `Added a **${type}** note for **${targetUsar.tag}**:\n\n` +
+                `${typeInfo.emoji} Nota añadida`,
+                `Se añadió una nota **${type}** para **${targetUser.tag}**:\n\n` +
                 `> ${note}\n\n` +
-                `**Moderator:** ${interaction.user.tag}\n` +
-                `**Total Notes:** ${notes.length}`
+                `**Moderador:** ${interaction.user.tag}\n` +
+                `**Total de notas:** ${notes.length}`
             )
         ]
     });
 }
 
-async function handleViewNotes(interaction, targetUsar, notes) {
+async function handleViewNotes(interaction, targetUser, notes) {
     if (notes.length === 0) {
-        return InteractionAyudaer.safeReply(interaction, {
+        return InteractionHelper.safeReply(interaction, {
             embeds: [
                 infoEmbed(
-                    "📝 No Notes",
-                    `There are no notes for **${targetUsar.tag}**.`
+                    "📝 Sin notas",
+                    `No hay notas para **${targetUser.tag}**.`
                 ),
             ],
         });
@@ -175,35 +175,35 @@ async function handleViewNotes(interaction, targetUsar, notes) {
 
     const sortedNotes = [...notes].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-    let description = `**Notes for ${targetUsar.tag} (${targetUsar.id}):**\n\n`;
+    let description = `**Notas de ${targetUser.tag} (${targetUser.id}):**\n\n`;
     
     sortedNotes.forEach((note, index) => {
         const typeInfo = getNoteTypeInfo(note.type);
         const date = new Date(note.timestamp).toLocaleDateString();
-        description += `${typeInfo.emoji} **Note #${index + 1}** (${note.type}) - ${date}\n`;
+        description += `${typeInfo.emoji} **Nota n.º ${index + 1}** (${note.type}) - ${date}\n`;
         description += `> ${note.content}\n`;
-        description += `*Added by ${note.author}*\n\n`;
+        description += `*Añadida por ${note.author}*\n\n`;
     });
 
     if (description.length > 4000) {
-        description = description.substring(0, 3900) + "\n... *(truncated)*";
+        description = description.substring(0, 3900) + "\n... *(texto recortado)*";
     }
 
-    return InteractionAyudaer.safeReply(interaction, {
+    return InteractionHelper.safeReply(interaction, {
         embeds: [
             infoEmbed(
-                `📝 Usar Notes (${notes.length})`,
+                `📝 Notas del usuario (${notes.length})`,
                 description
             )
         ]
     });
 }
 
-async function handleRemoveNote(interaction, targetUsar, notes, guildId) {
+async function handleRemoveNote(interaction, targetUser, notes, guildId) {
     const index = interaction.options.getInteger("index") - 1;
 
     if (index < 0 || index >= notes.length) {
-        return await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: `Please provide a valid note index (1-${notes.length}).` });
+        return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: `Proporciona un número de nota válido (1-${notes.length}).` });
     }
 
     // The view command displays notes sorted newest-first, so resolve the index
@@ -213,32 +213,32 @@ async function handleRemoveNote(interaction, targetUsar, notes, guildId) {
     const originalIndex = notes.indexOf(removedNote);
     notes.splice(originalIndex, 1);
 
-    const notesKey = getUsarNotesKey(guildId, targetUsar.id);
+    const notesKey = getUserNotesKey(guildId, targetUser.id);
     await setInDb(notesKey, notes);
 
     const typeInfo = getNoteTypeInfo(removedNote.type);
 
-    return InteractionAyudaer.safeReply(interaction, {
+    return InteractionHelper.safeReply(interaction, {
         embeds: [
             successEmbed(
-                `${typeInfo.emoji} Note Removed`,
-                `Removed note #${index + 1} from **${targetUsar.tag}**:\n\n` +
+                `${typeInfo.emoji} Nota eliminada`,
+                `Se eliminó la nota n.º ${index + 1} de **${targetUser.tag}**:\n\n` +
                 `> ${removedNote.content}\n\n` +
-                `**Remaining Notes:** ${notes.length}`
+                `**Notas restantes:** ${notes.length}`
             )
         ]
     });
 }
 
-async function handleClearNotes(interaction, targetUsar, notes, guildId) {
+async function handleClearNotes(interaction, targetUser, notes, guildId) {
     const noteCount = notes.length;
     
     if (noteCount === 0) {
-        return InteractionAyudaer.safeReply(interaction, {
+        return InteractionHelper.safeReply(interaction, {
             embeds: [
                 infoEmbed(
-                    "No Notes to Clear",
-                    `There are no notes for **${targetUsar.tag}** to clear.`
+                    "No hay notas para borrar",
+                    `No hay notas de **${targetUser.tag}** para borrar.`
                 ),
             ],
         });
@@ -246,14 +246,14 @@ async function handleClearNotes(interaction, targetUsar, notes, guildId) {
 
     notes.length = 0;
 
-    const notesKey = getUsarNotesKey(guildId, targetUsar.id);
+    const notesKey = getUserNotesKey(guildId, targetUser.id);
     await setInDb(notesKey, notes);
 
-    return InteractionAyudaer.safeReply(interaction, {
+    return InteractionHelper.safeReply(interaction, {
         embeds: [
             successEmbed(
-                "🗑️ Notes Cleared",
-                `Cleared **${noteCount}** notes from **${targetUsar.tag}**.`
+                "🗑️ Notas borradas",
+                `Se borraron **${noteCount}** notas de **${targetUser.tag}**.`
             )
         ]
     });

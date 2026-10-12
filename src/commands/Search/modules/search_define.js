@@ -1,18 +1,18 @@
 import axios from 'axios';
 import { createEmbed } from '../../../utils/embeds.js';
 import { logger } from '../../../utils/logger.js';
-import { handleInteractionError, replyUsarError, ErrorTypes } from '../../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../../utils/interactionAyudaer.js';
+import { handleInteractionError, replyUserError, ErrorTypes } from '../../../utils/errorHandler.js';
+import { InteractionHelper } from '../../../utils/interactionHelper.js';
 
 export default {
     async execute(interaction) {
         try {
-            const deferred = await InteractionAyudaer.safeDefer(interaction);
+            const deferred = await InteractionHelper.safeDefer(interaction);
             if (!deferred) {
                 return;
             }
 
-            const word = interaction.options.getString('word');
+            const word = interaction.options.getString('palabra');
 
             if (word.length < 2) {
                 logger.warn('Define command - word too short', {
@@ -20,7 +20,7 @@ export default {
                     word: word,
                     guildId: interaction.guildId
                 });
-                return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Please enter a word with at least 2 characters.' });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Introduce una palabra de al menos 2 caracteres.' });
             }
 
             const response = await axios.get(
@@ -29,7 +29,7 @@ export default {
             );
 
             if (!response.data || response.data.length === 0) {
-                return await replyUsarError(interaction, { type: ErrorTypes.USER_INPUT, message: `No definitions found for "${word}".` });
+                return await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `No se encontraron definiciones para "${word}".` });
             }
 
             const data = response.data[0];
@@ -45,7 +45,7 @@ export default {
                     .map((def, idx) => {
                         let text = `${idx + 1}. ${def.definition}`;
                         if (def.example) {
-                            text += `\n *Example: ${def.example}*`;
+                            text += `\n *Ejemplo: ${def.example}*`;
                         }
                         return text;
                     })
@@ -53,16 +53,16 @@ export default {
 
                 if (definitions) {
                     embed.addFields({
-                        name: `**${meaning.partOfSpeech || 'Definition'}**`,
+                        name: `**${meaning.partOfSpeech || 'Definición'}**`,
                         value: definitions,
                         inline: false
                     });
                 }
             });
 
-            embed.setFooter({ text: 'Powered by Free Dictionary API' });
+            embed.setFooter({ text: 'Con tecnología de Free Dictionary API' });
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed] });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
 
             logger.info('Dictionary definition retrieved', {
                 userId: interaction.user.id,
@@ -76,13 +76,13 @@ export default {
                 error: error.message,
                 stack: error.stack,
                 userId: interaction.user.id,
-                word: interaction.options.getString('word'),
+                word: interaction.options.getString('palabra'),
                 guildId: interaction.guildId,
                 commandName: 'define'
             });
 
             if (error.response?.status === 404) {
-                await replyUsarError(interaction, { type: ErrorTypes.USER_INPUT, message: `No definitions found for "${interaction.options.getString('word')}".` });
+                await replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: `No se encontraron definiciones para "${interaction.options.getString('palabra')}".` });
             } else {
                 await handleInteractionError(interaction, error, {
                     commandName: 'define',

@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed } from '../../utils/embeds.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 import {
   getCountingGameConfig,
   activateCountingGame,
@@ -10,40 +10,40 @@ import {
   getCountingSystemChoices,
   getCountingSystemLabel,
   getExpectedCountValue,
-} from '../../services/contaringGameService.js';
+} from '../../services/countingGameService.js';
 import { logger } from '../../utils/logger.js';
 
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
   data: new SlashCommandBuilder()
-    .setName('contar')
-    .setDescription('Administra el juego de contar del servidor')
+    .setName('count')
+    .setDescription('Administra el juego de conteo del servidor')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setDMPermission(false)
     .addSubcommand((subcommand) =>
       subcommand
         .setName('setup')
-        .setDescription('Inicia el juego de contar en un canal de texto')
+        .setDescription('Inicia un juego de conteo en un canal de texto')
         .addChannelOption((option) =>
           option
             .setName('channel')
-            .setDescription('El canal donde se jugará a contar')
+            .setDescription('Canal donde se llevará a cabo el conteo')
             .setRequired(true)
             .addChannelTypes(ChannelType.GuildText),
         )
         .addStringOption((option) =>
           option
             .setName('system')
-            .setDescription('El sistema de conteo que se utilizará')
+            .setDescription('Sistema de conteo que se utilizará')
             .setRequired(true)
             .addChoices(...getCountingSystemChoices()),
         ),
     )
     .addSubcommand((subcommand) =>
-      subcommand.setName('disable').setDescription('Desactiva el juego de contar en este servidor'),
+      subcommand.setName('disable').setDescription('Desactiva el juego de conteo de este servidor'),
     )
     .addSubcommand((subcommand) =>
-      subcommand.setName('status').setDescription('Muestra el estado actual del juego de contar'),
+      subcommand.setName('status').setDescription('Consulta el estado actual del juego de conteo'),
     )
     .addSubcommand((subcommand) =>
       subcommand
@@ -52,25 +52,25 @@ export default {
         .addIntegerOption((option) =>
           option
             .setName('start')
-            .setDescription('El número desde el que se comenzará después de reiniciar')
+            .setDescription('Número desde el que se empezará después del reinicio')
             .setMinValue(1),
         ),
     )
     .addSubcommand((subcommand) =>
-      subcommand.setName('leaderboard').setDescription('Muestra la clasificación del juego de contar'),
+      subcommand.setName('leaderboard').setDescription('Muestra la clasificación del juego de conteo'),
     ),
   category: 'Fun',
 
   async execute(interaction) {
     try {
-      const deferSuccess = await InteractionAyudaer.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+      const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
       if (!deferSuccess) {
         logger.warn('Count command defer failed', { userId: interaction.user.id, guildId: interaction.guildId });
         return;
       }
 
       if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-        return await replyUsarError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the **Manage Server** permission to use this command.' });
+        return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Necesitas el permiso **Administrar servidor** para usar este comando.' });
       }
 
       const guildId = interaction.guildId;
@@ -81,19 +81,19 @@ export default {
         const channel = interaction.options.getChannel('channel');
         const system = interaction.options.getString('system');
         if (!channel || channel.type !== ChannelType.GuildText) {
-          return await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please choose a text channel for the counting game.' });
+          return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Selecciona un canal de texto para el juego de conteo.' });
         }
 
         if (config.enabled && config.channelId && config.channelId !== channel.id) {
-          return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: `This server already has an active counting channel configured: <#${config.channelId}>. Disable the current counting game first, or use that existing channel.` });
+          return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Este servidor ya tiene configurado un canal de conteo activo: <#${config.channelId}>. Desactiva primero el juego actual o usa ese canal.` });
         }
 
         await activateCountingGame(interaction.client, guildId, channel.id, system);
-        return await InteractionAyudaer.safeEditReply(interaction, {
+        return await InteractionHelper.safeEditReply(interaction, {
           embeds: [
             successEmbed(
-              'Counting Game Enabled',
-              `The counting game is now active in ${channel} using the **${getCountingSystemLabel(system)}** system. Players must count up from **1** and may not post two numbers in a row.`,
+              'Juego de conteo activado',
+              `El juego de conteo está activo en ${channel} con el sistema **${getCountingSystemLabel(system)}**. El conteo empieza en **1** y nadie puede publicar dos números seguidos.`,
             ),
           ],
         });
@@ -101,33 +101,33 @@ export default {
 
       if (subcommand === 'disable') {
         if (!config.enabled) {
-          return await InteractionAyudaer.safeEditReply(interaction, {
-            embeds: [infoEmbed('Counting Game Disabled', 'The counting game is already disabled for this server.')],
+          return await InteractionHelper.safeEditReply(interaction, {
+            embeds: [infoEmbed('Juego de conteo desactivado', 'El juego de conteo ya está desactivado en este servidor.')],
           });
         }
 
         await disableCountingGame(interaction.client, guildId);
-        return await InteractionAyudaer.safeEditReply(interaction, {
-          embeds: [successEmbed('Counting Game Disabled', 'The counting game has been disabled.')],
+        return await InteractionHelper.safeEditReply(interaction, {
+          embeds: [successEmbed('Juego de conteo desactivado', 'Se desactivó el juego de conteo.')],
         });
       }
 
       if (subcommand === 'status') {
         const fields = [
-          { name: 'Enabled', value: config.enabled ? 'Yes' : 'No', inline: true },
-          { name: 'Channel', value: config.channelId ? `<#${config.channelId}>` : 'Not configured', inline: true },
-          { name: 'System', value: getCountingSystemLabel(config.system), inline: true },
-          { name: 'Next count', value: getExpectedCountValue(config), inline: true },
-          { name: 'Current streak', value: `${config.currentStreak}`, inline: true },
-          { name: 'Best streak', value: `${config.bestStreak || 0}`, inline: true },
-          { name: 'Last counter', value: config.lastUsarId ? `<@${config.lastUsarId}>` : 'None', inline: true },
+          { name: 'Activado', value: config.enabled ? 'Sí' : 'No', inline: true },
+          { name: 'Canal', value: config.channelId ? `<#${config.channelId}>` : 'Sin configurar', inline: true },
+          { name: 'Sistema', value: getCountingSystemLabel(config.system), inline: true },
+          { name: 'Siguiente número', value: getExpectedCountValue(config), inline: true },
+          { name: 'Racha actual', value: `${config.currentStreak}`, inline: true },
+          { name: 'Mejor racha', value: `${config.bestStreak || 0}`, inline: true },
+          { name: 'Último participante', value: config.lastUserId ? `<@${config.lastUserId}>` : 'Nadie', inline: true },
         ];
 
-        return await InteractionAyudaer.safeEditReply(interaction, {
+        return await InteractionHelper.safeEditReply(interaction, {
           embeds: [
             createEmbed({
-              title: 'Counting Game Status',
-              description: 'Overview of the currently configured counting game.',
+              title: 'Estado del juego de conteo',
+              description: 'Resumen del juego de conteo configurado.',
               fields,
               color: 'primary',
             }),
@@ -137,17 +137,17 @@ export default {
 
       if (subcommand === 'reset') {
         if (!config.enabled) {
-          return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Enable the counting game first with `/contar setup`.' });
+          return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Primero activa el juego de conteo con `/count setup`.' });
         }
 
         const startNumber = interaction.options.getInteger('start') || 1;
         await resetCountingGame(interaction.client, guildId, startNumber);
 
-        return await InteractionAyudaer.safeEditReply(interaction, {
+        return await InteractionHelper.safeEditReply(interaction, {
           embeds: [
             successEmbed(
-              'Counting Game Reset',
-              `The counting sequence has been reset. Start again with **${startNumber}** in <#${config.channelId}>.`,
+              'Juego de conteo reiniciado',
+              `Se reinició la secuencia. Vuelve a empezar desde **${startNumber}** en <#${config.channelId}>.`,
             ),
           ],
         });
@@ -156,21 +156,21 @@ export default {
       if (subcommand === 'leaderboard') {
         const leaderboard = buildCountingLeaderboard(config, interaction.guild);
 
-        return await InteractionAyudaer.safeEditReply(interaction, {
+        return await InteractionHelper.safeEditReply(interaction, {
           embeds: [
             createEmbed({
-              title: 'Counting Game Leaderboard',
-              description: leaderboard.length > 0 ? leaderboard.join('\n') : 'No counts have been recorded yet.',
+              title: 'Clasificación del juego de conteo',
+              description: leaderboard.length > 0 ? leaderboard.join('\n') : 'Todavía no hay números registrados.',
               color: 'primary',
             }),
           ],
         });
       }
 
-      return await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: 'Please choose a valid counting game action.' });
+      return await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: 'Selecciona una acción válida para el juego de conteo.' });
     } catch (error) {
       logger.error('Count command error:', error);
-      return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Something went wrong while managing the counting game.' });
+      return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ocurrió un error al administrar el juego de conteo.' });
     }
   },
 };

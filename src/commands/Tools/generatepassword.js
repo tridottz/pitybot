@@ -3,33 +3,33 @@ import { getColor } from '../../config/bot.js';
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { logger } from '../../utils/logger.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
-        .setName('generar-contrasena')
-        .setDescription('Genera una contraseña aleatoria segura')
+        .setName('generarcontrasena')
+        .setDescription('Genera una contraseña aleatoria y segura')
         .addIntegerOption(option =>
-            option.setName('length')
-                .setDescription('Longitud de la contraseña (predeterminado: 16, máximo: 50)')
+            option.setName('longitud')
+                .setDescription('Longitud de la contraseña (predeterminado: 16; máximo: 50)')
                 .setMinValue(8)
                 .setMaxValue(50)
                 .setRequired(false))
         .addBooleanOption(option =>
-            option.setName('uppercase')
+            option.setName('mayusculas')
                 .setDescription('Incluir letras mayúsculas (A-Z)')
                 .setRequired(false))
         .addBooleanOption(option =>
-            option.setName('numbers')
+            option.setName('numeros')
                 .setDescription('Incluir números (0-9)')
                 .setRequired(false))
         .addBooleanOption(option =>
-            option.setName('symbols')
+            option.setName('simbolos')
                 .setDescription('Incluir símbolos (!@#$%^&*)')
                 .setRequired(false)),
 
     async execute(interaction) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction, {
+        const deferSuccess = await InteractionHelper.safeDefer(interaction, {
             flags: MessageFlags.Ephemeral
         });
 
@@ -42,13 +42,13 @@ export default {
             return;
         }
 
-        const length = interaction.options.getInteger('length') || 16;
-        const includeUppercase = interaction.options.getBoolean('uppercase') ?? true;
-        const includeNumbers = interaction.options.getBoolean('numbers') ?? true;
-        const includeSymbols = interaction.options.getBoolean('symbols') ?? true;
+        const length = interaction.options.getInteger('longitud') || 16;
+        const includeUppercase = interaction.options.getBoolean('mayusculas') ?? true;
+        const includeNumbers = interaction.options.getBoolean('numeros') ?? true;
+        const includeSymbols = interaction.options.getBoolean('simbolos') ?? true;
 
         if (length < 8 || length > 50) {
-            await replyUsarError(interaction, { type: ErrorTypes.VALIDATION, message: `Password must be 8-50 characters. You provided: ${length}` });
+            await replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: `La contraseña debe tener entre 8 y 50 caracteres. Indicaste: ${length}` });
             return;
         }
 
@@ -139,7 +139,7 @@ export default {
             `**Contains:** ${hasLower ? 'Lowercase' : ''}${hasUpper ? ', Uppercase' : ''}${hasNumber ? ', Numbers' : ''}${hasSymbol ? ', Symbols' : ''}`
         ).setColor(strengthColor);
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [embed],
         });
     },

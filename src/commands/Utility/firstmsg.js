@@ -1,17 +1,17 @@
 import { SlashCommandBuilder, PermissionFlagsBits, PermissionsBitField, ChannelType } from 'discord.js';
 import { createEmbed, errorEmbed, successEmbed } from '../../utils/embeds.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { logger } from '../../utils/logger.js';
 export default {
     data: new SlashCommandBuilder()
-        .setName("primer-mensaje")
+        .setName("firstmsg")
         .setDescription("Obtén un enlace al primer mensaje de este canal")
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages),
     category: "Utility",
 
     async execute(interaction, config, client) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction);
+        const deferSuccess = await InteractionHelper.safeDefer(interaction);
         if (!deferSuccess) {
             logger.warn(`FirstMsg interaction defer failed`, {
                 userId: interaction.user.id,
@@ -35,14 +35,14 @@ export default {
                 channelId: interaction.channelId,
                 guildId: interaction.guildId
             });
-            return await InteractionAyudaer.safeEditReply(interaction, {
-                embeds: [successEmbed('First Message', "No messages found in this channel!")],
+            return await InteractionHelper.safeEditReply(interaction, {
+                embeds: [successEmbed('Primer mensaje', "No se encontraron mensajes en este canal.")],
             });
         }
 
         const messageLink = `https://discord.com/channels/${interaction.guildId}/${interaction.channelId}/${firstMessage.id}`;
 
-        await InteractionAyudaer.safeEditReply(interaction, {
+        await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
                     "First Message in #" + interaction.channel.name,

@@ -15,9 +15,9 @@ import {
     LabelBuilder,
     ChannelType,
 } from 'discord.js';
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { createEmbed, successEmbed, infoEmbed, warningEmbed, buildUsarErrorEmbed } from '../../utils/embeds.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { createEmbed, successEmbed, infoEmbed, warningEmbed, buildUserErrorEmbed } from '../../utils/embeds.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 import { getGuildConfig, setConfigValue } from '../../services/config/guildConfig.js';
 import ConfigService from '../../services/config/configService.js';
 import { logger } from '../../utils/logger.js';
@@ -49,7 +49,7 @@ async function notifyWizardStarted(buttonInteraction) {
 }
 
 async function notifyWizardDmBlocked(buttonInteraction) {
-    await replyUsarError(buttonInteraction, {
+    await replyUserError(buttonInteraction, {
         type: ErrorTypes.USER_INPUT,
         message: `No pude enviarte un mensaje directo. Activa los mensajes directos de este servidor e inténtalo de nuevo.\n\n${DM_DISABLED_HELP}`,
     }).catch(() => {});
@@ -129,7 +129,7 @@ function buildDashboardEmbed(config, guild) {
             },
             {
                 name: '⚡ Acceso a comandos',
-                value: 'Usa `/comandos dashboard` para activar o desactivar comandos y subcomandos.',
+                value: 'Usa `/commands dashboard` para activar o desactivar comandos y subcomandos.',
                 inline: false,
             },
             {
@@ -211,7 +211,7 @@ async function askQuestion(dmChannel, userId, prompt, stepNumber, totalSteps) {
 
     if (!collected || !collected.size) {
         await dmChannel.send({
-            embeds: [buildUsarErrorEmbed(ErrorTypes.RATE_LIMIT, 'No respondiste a tiempo. Vuelve a ejecutar el asistente cuando estés listo.')],
+            embeds: [buildUserErrorEmbed(ErrorTypes.RATE_LIMIT, 'No respondiste a tiempo. Vuelve a ejecutar el asistente cuando estés listo.')],
         });
         return null;
     }
@@ -270,7 +270,7 @@ async function validateGuildRoleId(guild, roleId) {
 async function refreshDashboard(rootInteraction, config, guild) {
     const embed = buildDashboardEmbed(config, guild);
     const components = [buildButtonRow(config, guild.id), buildSettingsSelect(guild.id)];
-    await InteractionAyudaer.safeEditReply(rootInteraction, { embeds: [embed], components }).catch(() => {});
+    await InteractionHelper.safeEditReply(rootInteraction, { embeds: [embed], components }).catch(() => {});
 }
 
 async function runSetupWizard(buttonInteraction, config, guild, client, rootInteraction) {
@@ -414,7 +414,7 @@ async function runSetupWizard(buttonInteraction, config, guild, client, rootInte
                 } catch (error) {
                     errors.push(`• ${prompt.key}: ${error.message}`);
                     await dmChannel.send({
-                        embeds: [buildUsarErrorEmbed(ErrorTypes.VALIDATION, `${error.message}\n\nResponde de nuevo con una respuesta válida, \`omitir\` o \`cancelar\`.`)],
+                        embeds: [buildUserErrorEmbed(ErrorTypes.VALIDATION, `${error.message}\n\nResponde de nuevo con una respuesta válida, \`omitir\` o \`cancelar\`.`)],
                     });
                 }
             }
@@ -599,7 +599,7 @@ async function handleSettingModalSubmit(selectInteraction, rootInteraction, sett
         await refreshDashboard(rootInteraction, updatedConfig, submitted.guild);
     } catch (error) {
         logger.error('Config wizard modal submit error:', error);
-        await replyUsarError(submitted, {
+        await replyUserError(submitted, {
             type: ErrorTypes.CONFIGURATION,
             message: error.message || 'Inténtalo de nuevo.',
         }).catch(() => {});
@@ -609,7 +609,7 @@ async function handleSettingModalSubmit(selectInteraction, rootInteraction, sett
 export default {
     slashOnly: true,
     data: new SlashCommandBuilder()
-        .setName('configurar')
+        .setName('configwizard')
         .setDescription('Abre el panel de configuración del servidor y el asistente de configuración')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .setDMPermission(false),
@@ -617,13 +617,13 @@ export default {
 
     async execute(interaction) {
         try {
-            const deferSuccess = await InteractionAyudaer.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+            const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
             if (!deferSuccess) {
                 return;
             }
 
             if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-                return replyUsarError(interaction, {
+                return replyUserError(interaction, {
                     type: ErrorTypes.PERMISSION,
                     message: 'Necesitas el permiso de **Administrar servidor** para usar este comando.',
                 });
@@ -633,7 +633,7 @@ export default {
             const embed = buildDashboardEmbed(guildConfig, interaction.guild);
             const components = [buildButtonRow(guildConfig, interaction.guildId), buildSettingsSelect(interaction.guildId)];
 
-            await InteractionAyudaer.safeEditReply(interaction, { embeds: [embed], components });
+            await InteractionHelper.safeEditReply(interaction, { embeds: [embed], components });
 
             const replyMessage = await interaction.fetchReply().catch(() => null);
             if (!replyMessage) {
@@ -674,7 +674,7 @@ export default {
                     }
                 } catch (error) {
                     logger.error('Config dashboard interaction error:', error);
-                    await replyUsarError(componentInteraction, {
+                    await replyUserError(componentInteraction, {
                         type: ErrorTypes.UNKNOWN,
                         message: 'No se pudo procesar tu selección. Inténtalo de nuevo.',
                     }).catch(() => {});
@@ -682,7 +682,7 @@ export default {
             });
         } catch (error) {
             logger.error('Config command error:', error);
-            await replyUsarError(interaction, {
+            await replyUserError(interaction, {
                 type: ErrorTypes.CONFIGURATION,
                 message: 'No se pudo abrir el panel de configuración. Inténtalo de nuevo.',
             });

@@ -75,7 +75,7 @@ const pendingInvalidLevelWarning = requestedLogLevel && !validLogLevels.has(requ
   ? `[logger] Invalid LOG_LEVEL "${process.env.LOG_LEVEL}". Falling back to "${defaultLogLevel}".`
   : null;
 
-const shouldPromoteUsarFacingLogs = process.env.NODE_ENV === 'production' && resolvedLogLevel === 'warn';
+const shouldPromoteUserFacingLogs = process.env.NODE_ENV === 'production' && resolvedLogLevel === 'warn';
 
 const LOG_SCHEMA_DEFAULTS = Object.freeze({
   event: 'application.log',
@@ -230,7 +230,7 @@ if (pendingInvalidLevelWarning) {
 }
 
 function startupLog(message) {
-  if (shouldPromoteUsarFacingLogs) {
+  if (shouldPromoteUserFacingLogs) {
     logger.log({
       level: 'warn',
       message,
@@ -247,7 +247,7 @@ function startupLog(message) {
 }
 
 function shutdownLog(message) {
-  if (shouldPromoteUsarFacingLogs) {
+  if (shouldPromoteUserFacingLogs) {
     logger.log({
       level: 'warn',
       message,

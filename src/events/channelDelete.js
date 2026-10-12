@@ -5,7 +5,7 @@ import {
     getTicketData,
     saveTicketData
 } from '../utils/database.js';
-import { getServerCounters, saveServerCounters } from '../services/estadisticas-servidorService.js';
+import { getServerCounters, saveServerCounters } from '../services/serverstatsService.js';
 import { logger } from '../utils/logger.js';
 
 export default {

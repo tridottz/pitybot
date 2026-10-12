@@ -1,11 +1,11 @@
 import { Events, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import { getColor, botConfig } from '../config/bot.js';
-import { getWelcomeConfig, getUsarApplications, deleteApplication } from '../utils/database.js';
-import { formatWelcomeMessage } from '../utils/bienvenida.js';
-import { logEvent, EVENT_TYPES } from '../services/registrosService.js';
-import { getServerCounters, updateCounter } from '../services/estadisticas-servidorService.js';
+import { getWelcomeConfig, getUserApplications, deleteApplication } from '../utils/database.js';
+import { formatWelcomeMessage } from '../utils/welcome.js';
+import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
+import { getServerCounters, updateCounter } from '../services/serverstatsService.js';
 import { getGuildBirthdays, deleteBirthday } from '../utils/database.js';
-import { deleteUsarLevelData } from '../services/niveling/niveling.js';
+import { deleteUserLevelData } from '../services/leveling/leveling.js';
 import { logger } from '../utils/logger.js';
 
 export default {
@@ -31,17 +31,17 @@ export default {
 
                 const formatData = { user, guild, member };
                 const goodbyeMessage = formatWelcomeMessage(
-                    welcomeConfig.leaveMessage || welcomeConfig.leaveEmbed?.description || botConfig.welcome?.defaultGoodbyeMessage || '{user} has left the server.',
+                    welcomeConfig.leaveMessage || welcomeConfig.leaveEmbed?.description || botConfig.welcome?.defaultGoodbyeMessage || '{user} ha salido del servidor.',
                     formatData
                 );
 
                 const embedTitle = formatWelcomeMessage(
-                    welcomeConfig.leaveEmbed?.title || '👋 Goodbye',
+                    welcomeConfig.leaveEmbed?.title || '👋 Hasta pronto',
                     formatData
                 );
                 const embedFooter = welcomeConfig.leaveEmbed?.footer
                     ? formatWelcomeMessage(welcomeConfig.leaveEmbed.footer, formatData)
-                    : `Goodbye from ${guild.name}!`;
+                    : `¡Hasta pronto, desde ${guild.name}!`;
 
                 const canEmbed = permissions.has(PermissionFlagsBits.EmbedLinks);
 
@@ -57,7 +57,7 @@ export default {
                         .setColor(welcomeConfig.leaveEmbed?.color || getColor('error'))
                         .setThumbnail(user.displayAvatarURL())
                         .addFields(
-                            { name: 'Usar', value: `${user.tag} (${user.id})`, inline: true },
+                            { name: 'User', value: `${user.tag} (${user.id})`, inline: true },
                             { name: 'Member Count', value: guild.memberCount.toString(), inline: true }
                         )
                         .setTimestamp()
@@ -84,9 +84,9 @@ export default {
                 guildId: guild.id,
                 eventType: EVENT_TYPES.MEMBER_LEAVE,
                 data: {
-                    title: 'Usar left',
+                    title: 'Usuario salió',
                     lines: [
-                        `**Usar:** ${user.toString()} (${user.tag})`,
+                        `**User:** ${user.toString()} (${user.tag})`,
                         `**ID:** \`${user.id}\``,
                         `**Joined:** <t:${Math.floor((member.joinedTimestamp || Date.now()) / 1000)}:R>`,
                         `**Members:** ${guild.memberCount}`,
@@ -126,7 +126,7 @@ export default {
         }
 
         try {
-            const userApplications = await getUsarApplications(member.client, guild.id, user.id);
+            const userApplications = await getUserApplications(member.client, guild.id, user.id);
             if (userApplications && userApplications.length > 0) {
                 for (const app of userApplications) {
                     await deleteApplication(member.client, guild.id, app.id, user.id);
@@ -138,7 +138,7 @@ export default {
         }
 
         try {
-            await deleteUsarLevelData(member.client, guild.id, user.id);
+            await deleteUserLevelData(member.client, guild.id, user.id);
             logger.debug(`Removed leveling data for user ${user.id} in guild ${guild.id}`);
         } catch (error) {
             logger.debug('Error handling leveling data on member leave:', error);

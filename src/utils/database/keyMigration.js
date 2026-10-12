@@ -98,7 +98,7 @@ async function migrateEconomyFromTemp(client, legacyKey, value) {
     );
 }
 
-async function migrateUsarLevelFromTemp(client, legacyKey, value) {
+async function migrateUserLevelFromTemp(client, legacyKey, value) {
     const parsed = parseKey(canonicalizeKey(legacyKey));
     const payload = typeof value === 'string' ? JSON.parse(value) : value;
     const lastMessageValue = payload?.lastMessage ?? payload?.last_message;
@@ -175,12 +175,12 @@ async function writeCompletedMarker(client, summary) {
  *
  * @param {object} options
  * @param {import('pg').Pool} options.pool - Connected pg pool.
- * @param {boolean} [options.dryEjecuta=false] - Log actions without writing.
+ * @param {boolean} [options.dryRun=false] - Log actions without writing.
  * @param {boolean} [options.force=false] - Ignore the completion marker.
- * @param {object} [options.logger=console] - Logger with info/advertir/error.
+ * @param {object} [options.logger=console] - Logger with info/warn/error.
  * @returns {Promise<{migrated:number, skipped:number, errors:number, alreadyDone?:boolean}>}
  */
-export async function runKeyMigration({ pool, dryEjecuta = false, force = false, logger = console } = {}) {
+export async function runKeyMigration({ pool, dryRun = false, force = false, logger = console } = {}) {
     if (!pool) {
         throw new Error('runKeyMigration requires a connected pg pool');
     }
@@ -189,11 +189,11 @@ export async function runKeyMigration({ pool, dryEjecuta = false, force = false,
     const summary = { migrated: 0, skipped: 0, errors: 0 };
 
     try {
-        if (!force && !dryEjecuta && (await hasCompletedMarker(client))) {
+        if (!force && !dryRun && (await hasCompletedMarker(client))) {
             return { ...summary, alreadyDone: true };
         }
 
-        logger.info(`Starting key migration${dryEjecuta ? ' (dry run)' : ''}...`);
+        logger.info(`Starting key migration${dryRun ? ' (dry run)' : ''}...`);
 
         const rows = await client.query(
             `SELECT key, value FROM ${pgConfig.tables.temp_data} ORDER BY key`,
@@ -210,7 +210,7 @@ export async function runKeyMigration({ pool, dryEjecuta = false, force = false,
                 if (await keyExists(client, canonicalKey)) {
                     logger.info(`Skip ${legacyKey} -> ${canonicalKey} (canonical already exists)`);
                     summary.skipped += 1;
-                    if (!dryEjecuta) {
+                    if (!dryRun) {
                         await client.query(
                             `DELETE FROM ${pgConfig.tables.temp_data} WHERE key = $1`,
                             [legacyKey],
@@ -222,7 +222,7 @@ export async function runKeyMigration({ pool, dryEjecuta = false, force = false,
                 const parsed = parseKey(canonicalKey);
                 logger.info(`Migrate ${legacyKey} -> ${canonicalKey} [${parsed.type}]`);
 
-                if (!dryEjecuta) {
+                if (!dryRun) {
                     if (parsed.type === 'economy') {
                         await migrateEconomyFromTemp(client, legacyKey, row.value);
                         await client.query(
@@ -230,7 +230,7 @@ export async function runKeyMigration({ pool, dryEjecuta = false, force = false,
                             [legacyKey],
                         );
                     } else if (parsed.type === 'user_level') {
-                        await migrateUsarLevelFromTemp(client, legacyKey, row.value);
+                        await migrateUserLevelFromTemp(client, legacyKey, row.value);
                         await client.query(
                             `DELETE FROM ${pgConfig.tables.temp_data} WHERE key = $1`,
                             [legacyKey],
@@ -253,7 +253,7 @@ export async function runKeyMigration({ pool, dryEjecuta = false, force = false,
             }
         }
 
-        if (!dryEjecuta) {
+        if (!dryRun) {
             await writeCompletedMarker(client, summary);
         }
 

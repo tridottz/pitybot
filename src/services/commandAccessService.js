@@ -6,7 +6,7 @@ import {
   formatCategoryName,
   getCategoryIcon,
   PROTECTED_COMMANDS,
-} from '../config/comandos/commandCategories.js';
+} from '../config/commands/commandCategories.js';
 
 function normalizeToggleRecord(raw) {
   if (!raw) {
@@ -50,7 +50,7 @@ export function buildCommandRegistry(client) {
     // Add the main command
     categories.get(categoryKey).commands.push({
       name: command.data.name,
-      description: command.data.description || 'No description',
+      description: command.data.description || 'Sin descripción',
       protected: PROTECTED_COMMANDS.has(command.data.name.toLowerCase()),
       isSubcommand: false,
     });
@@ -63,7 +63,7 @@ export function buildCommandRegistry(client) {
         const subcommandName = `${command.data.name} ${option.name}`;
         categories.get(categoryKey).commands.push({
           name: subcommandName,
-          description: option.description || 'No description',
+          description: option.description || 'Sin descripción',
           protected: false,
           isSubcommand: true,
           parentCommand: command.data.name,
@@ -76,7 +76,7 @@ export function buildCommandRegistry(client) {
             const subcommandName = `${command.data.name} ${option.name} ${sub.name}`;
             categories.get(categoryKey).commands.push({
               name: subcommandName,
-              description: sub.description || 'No description',
+              description: sub.description || 'Sin descripción',
               protected: false,
               isSubcommand: true,
               parentCommand: command.data.name,

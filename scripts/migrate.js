@@ -216,6 +216,6 @@ if (command === 'apply') {
 } else if (command === 'status') {
   printMigrationStatus();
 } else {
-  logger.error(`Unknown command: ${command}. Usa one of: apply, check, status`);
+  logger.error(`Unknown command: ${command}. Use one of: apply, check, status`);
   process.exit(1);
 }

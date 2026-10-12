@@ -1,4 +1,4 @@
-import verificationButtonHandler from '../../../handlers/verificacionButtons.js';
+import verificationButtonHandler from '../../../handlers/verificationButtons.js';
 
 export default {
   name: verificationButtonHandler.customId,

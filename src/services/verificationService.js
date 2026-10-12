@@ -28,7 +28,7 @@ const shouldLogVerifications = verificationDefaults.logAllVerifications ?? true;
 const shouldKeepAuditTrail = verificationDefaults.keepAuditTrail ?? false;
 let lastCleanupAt = 0;
 
-export async function verifyUsar(client, guildId, userId, options = {}) {
+export async function verifyUser(client, guildId, userId, options = {}) {
     const { source = 'manual', moderatorId = null } = options;
     
     try {
@@ -50,7 +50,7 @@ export async function verifyUsar(client, guildId, userId, options = {}) {
             throw createError(
                 `Member ${userId} not found in guild`,
                 ErrorTypes.USER_INPUT,
-                "Usar is not in this server.",
+                "User is not in this server.",
                 { userId, guildId }
             );
         }
@@ -74,7 +74,7 @@ export async function verifyUsar(client, guildId, userId, options = {}) {
             throw createError(
                 'Bot cannot assign verified role',
                 ErrorTypes.PERMISSION,
-                "I can't assign the verified role. Please check my **Manage Roles** permission and role hierarchy.",
+                "No puedo asignar el rol de verificado. Revisa que tenga el permiso **Gestionar roles** y la jerarquía de roles.",
                 { guildId, roleId: verifiedRole.id }
             );
         }
@@ -91,7 +91,7 @@ export async function verifyUsar(client, guildId, userId, options = {}) {
         await checkVerificationCooldown(userId, guildId, defaultCooldownMs);
         await trackVerificationAttempt(userId, guildId, defaultMaxAttempts, defaultAttemptWindowMs);
 
-        await member.roles.add(verifiedRole.id, `Usar verified (${source})`);
+        await member.roles.add(verifiedRole.id, `User verified (${source})`);
 
         logVerificationAction(client, guildId, userId, 'verified', {
             source,
@@ -100,7 +100,7 @@ export async function verifyUsar(client, guildId, userId, options = {}) {
             moderatorId
         });
 
-        logger.info('Usar verified successfully', {
+        logger.info('User verified successfully', {
             guildId,
             userId,
             roleId: verifiedRole.id,
@@ -118,10 +118,10 @@ export async function verifyUsar(client, guildId, userId, options = {}) {
     } catch (error) {
         const typedError = ensureTypedServiceError(error, {
             service: 'verificationService',
-            operation: 'verifyUsar',
+            operation: 'verifyUser',
             type: ErrorTypes.UNKNOWN,
-            message: 'Verification operation failed: verifyUsar',
-            userMessage: 'Verification failed. Please try again in a moment.',
+            message: 'Verification operation failed: verifyUser',
+            userMessage: 'La verificación falló. Inténtalo de nuevo en un momento.',
             context: { guildId, userId, source: options.source }
         });
         logger.error('Error verifying user', {
@@ -244,7 +244,7 @@ export async function autoVerifyOnJoin(client, guild, member, verificationConfig
             roleName: verifiedRole.name
         });
 
-        logger.info('Usar auto-verified on join', {
+        logger.info('User auto-verified on join', {
             guildId: guild.id,
             userId: member.id,
             userTag: member.user.tag,
@@ -270,7 +270,7 @@ export async function autoVerifyOnJoin(client, guild, member, verificationConfig
             operation: 'autoVerifyOnJoin',
             type: ErrorTypes.UNKNOWN,
             message: 'Verification operation failed: autoVerifyOnJoin',
-            userMessage: 'Automatic verification failed. Please verify manually.',
+            userMessage: 'La verificación automática falló. Verifica tu cuenta manualmente.',
             context: { guildId: guild.id, userId: member.id }
         });
         logger.error('Error in auto-verification on join', {
@@ -310,7 +310,7 @@ export async function removeVerification(client, guildId, userId, options = {}) 
             throw createError(
                 `Member ${userId} not found`,
                 ErrorTypes.USER_INPUT,
-                "Usar is not in this server.",
+                "User is not in this server.",
                 { userId }
             );
         }
@@ -341,7 +341,7 @@ export async function removeVerification(client, guildId, userId, options = {}) 
             throw createError(
                 'Bot cannot manage verified role',
                 ErrorTypes.PERMISSION,
-                "I can't remove the verified role right now. Please check my **Manage Roles** permission and role hierarchy.",
+                "No puedo quitar el rol de verificado ahora. Revisa que tenga el permiso **Gestionar roles** y la jerarquía de roles.",
                 { guildId, roleId: verifiedRole.id }
             );
         }
@@ -384,7 +384,7 @@ export async function removeVerification(client, guildId, userId, options = {}) 
             operation: 'removeVerification',
             type: ErrorTypes.UNKNOWN,
             message: 'Verification operation failed: removeVerification',
-            userMessage: 'Failed to remove verification. Please try again in a moment.',
+            userMessage: 'No se pudo quitar la verificación. Inténtalo de nuevo en un momento.',
             context: { guildId, userId, reason }
         });
         logger.error('Error removing verification', {
@@ -403,7 +403,7 @@ export async function validateVerificationSetup(guild, verificationConfig) {
         throw createError(
             'Bot member not available in guild cache',
             ErrorTypes.CONFIGURATION,
-            "I couldn't verify my server permissions. Please try again.",
+            "No pude comprobar mis permisos en el servidor. Inténtalo de nuevo.",
             { guildId: guild.id }
         );
     }
@@ -413,7 +413,7 @@ export async function validateVerificationSetup(guild, verificationConfig) {
         throw createError(
             "Verified role not found",
             ErrorTypes.CONFIGURATION,
-            "The verified role was deleted. Please run `/verificacion setup` again.",
+            "Se eliminó el rol de verificado. Ejecuta `/verification setup` de nuevo.",
             { roleId: verificationConfig.roleId, guildId: guild.id }
         );
     }
@@ -519,9 +519,9 @@ export async function checkVerificationCooldown(userId, guildId, cooldownMs = de
     if (lastVerified && Date.now() - lastVerified < cooldownMs) {
         const remaining = cooldownMs - (Date.now() - lastVerified);
         throw createError(
-            "Usar on verification cooldown",
+            "User on verification cooldown",
             ErrorTypes.RATE_LIMIT,
-            `Please wait ${Math.ceil(remaining / 1000)} seconds before verifying again.`,
+            `Espera ${Math.ceil(remaining / 1000)} segundos antes de volver a verificarte.`,
             { userId, guildId, cooldownRemaining: remaining }
         );
     }
@@ -547,7 +547,7 @@ export async function trackVerificationAttempt(
         throw createError(
             "Too many verification attempts",
             ErrorTypes.RATE_LIMIT,
-            "You've attempted too many times. Please wait a moment.",
+            "Lo intentaste demasiadas veces. Espera un momento.",
             { attempts: recentAttempts.length, maxAttempts }
         );
     }
@@ -561,17 +561,17 @@ async function sendAutoVerifyNotification(member, role, guild) {
         const { createEmbed } = await import('../utils/embeds.js');
         
         const embed = createEmbed({
-            title: "🎉 Welcome to the Server!",
-            description: `You have been automatically verified in **${guild.name}**!`,
+            title: "🎉 ¡Te damos la bienvenida al servidor!",
+            description: `Se verificó tu cuenta automáticamente en **${guild.name}**.`,
             fields: [
                 {
-                    name: "✅ Role Assigned",
-                    value: `You now have the ${role} role!`,
+                    name: "✅ Rol asignado",
+                    value: `Ahora tienes el rol ${role}.`,
                     inline: false
                 },
                 {
-                    name: "📖 What's Next?",
-                    value: "You now have access to all server channels and features. Welcome!",
+                    name: '📖 ¿Qué sigue?',
+                    value: 'Ahora tienes acceso a todos los canales y funciones del servidor. ¡Te damos la bienvenida!',
                     inline: false
                 }
             ],
@@ -655,7 +655,7 @@ export function validateAutoVerifyCriteria(criteria, accountAgeDays) {
         throw createError(
             `Invalid auto-verify criteria: ${criteria}`,
             ErrorTypes.VALIDATION,
-            "Please select a valid criteria option.",
+            "Selecciona un criterio válido.",
             { criteria, validCriteria }
         );
     }
@@ -665,7 +665,7 @@ export function validateAutoVerifyCriteria(criteria, accountAgeDays) {
             throw createError(
                 "Invalid account age days",
                 ErrorTypes.VALIDATION,
-                `Account age must be between ${minAutoVerifyAccountAgeDays} and ${maxAutoVerifyAccountAgeDays} days.`,
+                `La antigüedad de la cuenta debe estar entre ${minAutoVerifyAccountAgeDays} y ${maxAutoVerifyAccountAgeDays} días.`,
                 { accountAgeDays, minAutoVerifyAccountAgeDays, maxAutoVerifyAccountAgeDays }
             );
         }
@@ -675,7 +675,7 @@ export function validateAutoVerifyCriteria(criteria, accountAgeDays) {
 }
 
 export default {
-    verifyUsar,
+    verifyUser,
     autoVerifyOnJoin,
     removeVerification,
     validateVerificationSetup,

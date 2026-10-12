@@ -63,7 +63,7 @@ export async function writeGuildConfig(client, guildId, config, context = {}) {
         throw createError(
             'Database client unavailable for guild config write',
             ErrorTypes.DATABASE,
-            'Failed to save server configuration. The database is unavailable.',
+            'No se pudo guardar la configuración del servidor. La base de datos no está disponible.',
             { guildId, ...context },
         );
     }
@@ -75,7 +75,7 @@ export async function writeGuildConfig(client, guildId, config, context = {}) {
         throw createError(
             'Guild config write rejected by database layer',
             ErrorTypes.DATABASE,
-            'Failed to save server configuration. Please try again.',
+            'No se pudo guardar la configuración del servidor. Inténtalo de nuevo.',
             { guildId, ...context },
         );
     }

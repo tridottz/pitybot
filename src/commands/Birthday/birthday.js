@@ -1,15 +1,15 @@
 import { SlashCommandBuilder, MessageFlags, ChannelType } from 'discord.js';
 import { createEmbed, successEmbed } from '../../utils/embeds.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 
-import birthdaySet from './modules/cumpleanos_set.js';
-import birthdayInfo from './modules/cumpleanos_info.js';
-import birthdayList from './modules/cumpleanos_list.js';
-import birthdayRemove from './modules/cumpleanos_remove.js';
+import birthdaySet from './modules/birthday_set.js';
+import birthdayInfo from './modules/birthday_info.js';
+import birthdayList from './modules/birthday_list.js';
+import birthdayRemove from './modules/birthday_remove.js';
 import nextBirthdays from './modules/next_birthdays.js';
-import birthdaySetchannel from './modules/cumpleanos_setchannel.js';
+import birthdaySetchannel from './modules/birthday_setchannel.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName('cumpleaños')
@@ -39,7 +39,7 @@ export default {
             subcommand
                 .setName('información')
                 .setDescription('Ver información de cumpleaños')
-                .addUsarOption(option =>
+                .addUserOption(option =>
                     option
                         .setName('usuario')
                         .setDescription('Revisa el cumple de un usuario')
@@ -64,11 +64,11 @@ export default {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('canal')
-                .setDescription('Establece o desactiva los cumpleaños. (Manage Server required)')
+                .setDescription('Establece o desactiva los cumpleaños. (Se requiere el permiso Administrar servidor)')
                 .addChannelOption(option =>
                     option
                         .setName('canal')
-                        .setDescription('Eo canal de texto para estos anuncios. Déjalo vacío para eliminarlo.')
+                        .setDescription('Canal de texto para estos anuncios. Déjalo vacío para desactivarlos.')
                         .addChannelTypes(ChannelType.GuildText)
                         .setRequired(false)
                 )
@@ -91,7 +91,7 @@ export default {
             case 'canal':
                 return await birthdaySetchannel.execute(interaction, config, client);
             default:
-                return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Unknown subcommand' });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Subcomando desconocido.' });
         }
     }
 };

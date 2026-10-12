@@ -2,9 +2,9 @@ import { Events, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import { getColor, botConfig } from '../config/bot.js';
 import { getGuildConfig } from '../services/config/guildConfig.js';
 import { getWelcomeConfig } from '../utils/database.js';
-import { formatWelcomeMessage } from '../utils/bienvenida.js';
-import { logEvent, EVENT_TYPES } from '../services/registrosService.js';
-import { getServerCounters, updateCounter } from '../services/estadisticas-servidorService.js';
+import { formatWelcomeMessage } from '../utils/welcome.js';
+import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
+import { getServerCounters, updateCounter } from '../services/serverstatsService.js';
 import { setBirthday as dbSetBirthday } from '../utils/database.js';
 import { logger } from '../utils/logger.js';
 
@@ -31,19 +31,19 @@ export default {
             if (permissions?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages])) {
                 const formatData = { user, guild, member };
                 const welcomeMessage = formatWelcomeMessage(
-                    welcomeConfig.welcomeMessage || welcomeConfig.welcomeEmbed?.description || botConfig.welcome?.defaultWelcomeMessage || 'Welcome {user} to {server}!',
+                    welcomeConfig.welcomeMessage || welcomeConfig.welcomeEmbed?.description || botConfig.welcome?.defaultWelcomeMessage || '¡Te damos la bienvenida, {user}, a {server}!',
                     formatData
                 );
 
                 const messageContent = welcomeConfig.welcomePing ? user.toString() : null;
 
                 const embedTitle = formatWelcomeMessage(
-                    welcomeConfig.welcomeEmbed?.title || '🎉 Welcome!',
+                    welcomeConfig.welcomeEmbed?.title || '🎉 ¡Te damos la bienvenida!',
                     formatData
                 );
                 const embedFooter = welcomeConfig.welcomeEmbed?.footer
                     ? formatWelcomeMessage(welcomeConfig.welcomeEmbed.footer, formatData)
-                    : `Welcome to ${guild.name}!`;
+                    : `¡Te damos la bienvenida a ${guild.name}!`;
 
                 const canEmbed = permissions.has(PermissionFlagsBits.EmbedLinks);
 
@@ -58,8 +58,8 @@ export default {
                         .setDescription(welcomeMessage)
                         .setThumbnail(user.displayAvatarURL())
                         .addFields(
-                            { name: 'Usar', value: `${user.tag} (${user.id})`, inline: true },
-                            { name: 'Member Count', value: guild.memberCount.toString(), inline: true }
+                            { name: 'Usuario', value: `${user.tag} (${user.id})`, inline: true },
+                            { name: 'Número de miembros', value: guild.memberCount.toString(), inline: true }
                         )
                         .setTimestamp()
                         .setFooter({ text: embedFooter });
@@ -110,9 +110,9 @@ export default {
                 guildId: guild.id,
                 eventType: EVENT_TYPES.MEMBER_JOIN,
                 data: {
-                    title: 'Usar joined',
+                    title: 'Usuario nuevo',
                     lines: [
-                        `**Usar:** ${user.toString()} (${user.displayName !== user.username ? `@${user.displayName}` : user.tag})`,
+                        `**User:** ${user.toString()} (${user.displayName !== user.username ? `@${user.displayName}` : user.tag})`,
                         `**ID:** \`${user.id}\``,
                         `**Created:** <t:${Math.floor(user.createdTimestamp / 1000)}:R>`,
                         `**Members:** ${guild.memberCount}`,
@@ -158,13 +158,13 @@ export default {
 };
 
 async function handleVerification(member, guild, verificationConfig, client) {
-    const { autoVerifyOnJoin } = await import('../services/verificacionService.js');
+    const { autoVerifyOnJoin } = await import('../services/verificationService.js');
     
     try {
         const result = await autoVerifyOnJoin(client, guild, member, verificationConfig);
         
         if (result.autoVerified) {
-            logger.info('Usar auto-verified on join', {
+            logger.info('User auto-verified on join', {
                 guildId: guild.id,
                 userId: member.id,
                 userTag: member.user.tag,
@@ -172,7 +172,7 @@ async function handleVerification(member, guild, verificationConfig, client) {
                 criteria: result.criteria
             });
         } else {
-            logger.debug('Usar not auto-verified on join', {
+            logger.debug('User not auto-verified on join', {
                 guildId: guild.id,
                 userId: member.id,
                 reason: result.reason

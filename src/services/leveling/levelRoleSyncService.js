@@ -1,12 +1,12 @@
 import { logger } from '../../utils/logger.js';
-import { getLevelingConfig, getUsarLevelData, saveLevelingConfig } from './niveling.js';
+import { getLevelingConfig, getUserLevelData, saveLevelingConfig } from './leveling.js';
 
-import { getUsarLevelPrefix } from '../../utils/database/keys.js';
+import { getUserLevelPrefix } from '../../utils/database/keys.js';
 
-async function listLevelUsarIds(client, guildId) {
+async function listLevelUserIds(client, guildId) {
     if (!client.db?.list) return [];
 
-    const prefixes = [getUsarLevelPrefix(guildId), `${guildId}:leveling:users:`];
+    const prefixes = [getUserLevelPrefix(guildId), `${guildId}:leveling:users:`];
     const userIds = new Set();
 
     for (const prefix of prefixes) {
@@ -77,10 +77,10 @@ export async function reconcileLevelRoles(client, guildId = null) {
 
             if (Object.keys(rewards).length === 0) continue;
 
-            const userIds = await listLevelUsarIds(client, guild.id);
+            const userIds = await listLevelUserIds(client, guild.id);
 
             for (const userId of userIds) {
-                const levelData = await getUsarLevelData(client, guild.id, userId);
+                const levelData = await getUserLevelData(client, guild.id, userId);
                 const member = await guild.members.fetch(userId).catch(() => null);
                 if (!member) continue;
 

@@ -11,7 +11,7 @@ import {
     getApplications,
     createApplication,
     updateApplication,
-    getUsarApplications,
+    getUserApplications,
     getApplicationRoles,
     saveApplicationRoles
 } from '../utils/database.js';
@@ -30,7 +30,7 @@ class ApplicationService {
             throw createError(
                 'Missing required fields for application submission',
                 ErrorTypes.VALIDATION,
-                'Invalid application data. Please try again.',
+                'Los datos de la postulación no son válidos. Inténtalo de nuevo.',
                 { data }
             );
         }
@@ -39,7 +39,7 @@ class ApplicationService {
             throw createError(
                 'Application must have answers',
                 ErrorTypes.VALIDATION,
-                'You must answer all application questions.',
+                'Debes responder todas las preguntas de la postulación.',
                 { data }
             );
         }
@@ -52,7 +52,7 @@ class ApplicationService {
                 throw createError(
                     'Invalid answer format',
                     ErrorTypes.VALIDATION,
-                    'All questions must have answers.',
+                    'Todas las preguntas deben tener respuesta.',
                     { answer }
                 );
             }
@@ -61,7 +61,7 @@ class ApplicationService {
                 throw createError(
                     'Answer too long',
                     ErrorTypes.VALIDATION,
-                    'Each answer must be less than 1000 characters.',
+                    'Cada respuesta debe tener menos de 1000 caracteres.',
                     { length: sanitizedAnswer.length }
                 );
             }
@@ -70,7 +70,7 @@ class ApplicationService {
                 throw createError(
                     'Answer too short',
                     ErrorTypes.VALIDATION,
-                    'Please provide meaningful answers (at least 10 characters).',
+                    'Escribe respuestas completas de al menos 10 caracteres.',
                     { length: sanitizedAnswer.length }
                 );
             }
@@ -89,7 +89,7 @@ class ApplicationService {
             throw createError(
                 'Application submission on cooldown',
                 ErrorTypes.RATE_LIMIT,
-                `Please wait ${Math.ceil(remainingTime / 60)} minute(s) before submitting another application.`,
+                `Espera ${Math.ceil(remainingTime / 60)} minuto(s) antes de enviar otra postulación.`,
                 { remainingTime, userId }
             );
         }
@@ -108,7 +108,7 @@ class ApplicationService {
 
         if (!isManager) {
             throw createError(
-                'Usar lacks permission to manage applications',
+                'User lacks permission to manage applications',
                 ErrorTypes.PERMISSION,
                 'You do not have permission to manage applications.',
                 { userId: member.id, guildId }
@@ -135,14 +135,14 @@ class ApplicationService {
                 );
             }
 
-            const userApps = await getUsarApplications(client, data.guildId, data.userId);
+            const userApps = await getUserApplications(client, data.guildId, data.userId);
             const pendingApp = userApps.find(app => app.status === 'pending');
 
             if (pendingApp) {
                 throw createError(
-                    'Usar already has pending application',
+                    'User already has pending application',
                     ErrorTypes.VALIDATION,
-                    'You already have a pending application. Please wait for it to be reviewed.',
+                    'Ya tienes una postulación pendiente. Espera a que la revisen.',
                     { userId: data.userId, pendingAppId: pendingApp.id }
                 );
             }
@@ -185,7 +185,7 @@ class ApplicationService {
                 throw createError(
                     'Invalid review action',
                     ErrorTypes.VALIDATION,
-                    'Review action must be either approve or deny.',
+                    'La acción de revisión debe ser aprobar o rechazar.',
                     { action }
                 );
             }
@@ -195,7 +195,7 @@ class ApplicationService {
                 throw createError(
                     'Application not found',
                     ErrorTypes.CONFIGURATION,
-                    'The application you are trying to review does not exist.',
+                    'La postulación que quieres revisar no existe.',
                     { applicationId, guildId }
                 );
             }
@@ -204,13 +204,13 @@ class ApplicationService {
                 throw createError(
                     'Application already processed',
                     ErrorTypes.VALIDATION,
-                    'This application has already been reviewed.',
+                    'Esta postulación ya fue revisada.',
                     { applicationId, status: application.status }
                 );
             }
 
             const status = action === 'approve' ? 'approved' : 'denied';
-            const sanitizedReason = reason ? reason.trim().substring(0, 500) : 'No se proporcionó un motivo.';
+            const sanitizedReason = reason ? reason.trim().substring(0, 500) : 'No reason provided.';
 
             const updatedApplication = await updateApplication(client, guildId, applicationId, {
                 status,
@@ -333,7 +333,7 @@ class ApplicationService {
                     throw createError(
                         'Missing role ID',
                         ErrorTypes.VALIDATION,
-                        'You must specify a role to add.',
+                        'Debes indicar el rol que quieres añadir.',
                         { action }
                     );
                 }
@@ -342,7 +342,7 @@ class ApplicationService {
                     throw createError(
                         'Role already configured',
                         ErrorTypes.VALIDATION,
-                        'This role is already configured for applications.',
+                        'Este rol ya está configurado para postulaciones.',
                         { roleId }
                     );
                 }
@@ -364,7 +364,7 @@ class ApplicationService {
                     throw createError(
                         'Missing role ID',
                         ErrorTypes.VALIDATION,
-                        'You must specify a role to remove.',
+                        'Debes indicar el rol que quieres quitar.',
                         { action }
                     );
                 }
@@ -400,11 +400,11 @@ class ApplicationService {
         }
     }
 
-    static async getUsarApplications(client, guildId, userId) {
+    static async getUserApplications(client, guildId, userId) {
         try {
-            const applications = await getUsarApplications(client, guildId, userId);
+            const applications = await getUserApplications(client, guildId, userId);
 
-            logger.debug('Usar applications retrieved', {
+            logger.debug('User applications retrieved', {
                 guildId,
                 userId,
                 count: applications.length

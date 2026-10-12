@@ -1,9 +1,9 @@
 // xpSystem.js
 
 import { logger } from '../../utils/logger.js';
-import { getLevelingConfig, getXpForLevel, getUsarLevelData, saveUsarLevelData } from './niveling.js';
-import { logEvent, EVENT_TYPES } from '../registrosService.js';
-import { formatLogLine } from '../../utils/registros/logEmbeds.js';
+import { getLevelingConfig, getXpForLevel, getUserLevelData, saveUserLevelData } from './leveling.js';
+import { logEvent, EVENT_TYPES } from '../loggingService.js';
+import { formatLogLine } from '../../utils/logging/logEmbeds.js';
 import { Mutex } from '../../utils/mutex.js';
 import { wrapServiceBoundary } from '../../utils/errorHandler.js';
 
@@ -24,7 +24,7 @@ export const addXp = wrapServiceBoundary(async function addXp(client, guild, mem
       return null;
     }
 
-    const levelData = await getUsarLevelData(client, guild.id, member.user.id);
+    const levelData = await getUserLevelData(client, guild.id, member.user.id);
 
     levelData.xp += xpToAdd;
     levelData.totalXp += xpToAdd;
@@ -58,7 +58,7 @@ export const addXp = wrapServiceBoundary(async function addXp(client, guild, mem
           guildId: guild.id,
           eventType: EVENT_TYPES.LEVELING_LEVELUP,
           data: {
-            title: 'Level Up',
+            title: 'Subida de nivel',
             lines: [
               formatLogLine('Member', `${member.user.tag} (\`${member.user.id}\`)`),
               formatLogLine('New Level', levelData.level.toString()),
@@ -73,7 +73,7 @@ export const addXp = wrapServiceBoundary(async function addXp(client, guild, mem
       }
     }
 
-    await saveUsarLevelData(client, guild.id, member.user.id, levelData);
+    await saveUserLevelData(client, guild.id, member.user.id, levelData);
 
     return {
       level: levelData.level,
@@ -86,7 +86,7 @@ export const addXp = wrapServiceBoundary(async function addXp(client, guild, mem
 }, {
   service: 'xpSystem',
   operation: 'addXp',
-  userMessage: 'Failed to award XP. Please try again.',
+  userMessage: 'No se pudo asignar XP. Inténtalo de nuevo.',
 });
 
 async function awardRoleReward(guild, member, roleId, level) {

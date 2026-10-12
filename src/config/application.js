@@ -1,7 +1,7 @@
 import { fileURLToPath } from "url";
 import path from "path";
 import botConfig, { validateConfig } from "./bot.js";
-import { shopConfig as shop } from "./tienda/index.js";
+import { shopConfig as shop } from "./shop/index.js";
 import { pgConfig } from "./database/postgres.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const appConfig = {
   paths: {
     root: path.join(__dirname, "../.."),
-    commands: path.join(__dirname, "../comandos"),
+    commands: path.join(__dirname, "../commands"),
     events: path.join(__dirname, "../events"),
     config: __dirname,
     utils: path.join(__dirname, "../utils"),

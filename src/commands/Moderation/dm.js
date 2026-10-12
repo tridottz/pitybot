@@ -4,28 +4,28 @@ import { logEvent } from '../../utils/moderation.js';
 import { logger } from '../../utils/logger.js';
 import { sanitizeMarkdown } from '../../utils/validation.js';
 
-import { InteractionAyudaer } from '../../utils/interactionAyudaer.js';
-import { replyUsarError, ErrorTypes } from '../../utils/errorHandler.js';
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
     data: new SlashCommandBuilder()
-        .setName("mensaje-privado")
-        .setDescription("Send a direct message to a user (Staff only)")
-        .addUsarOption(option =>
+        .setName("dm")
+        .setDescription("Envía un mensaje privado a un usuario (solo para el equipo de moderación)")
+        .addUserOption(option =>
             option
                 .setName("user")
-                .setDescription("The user to send a DM to")
+                .setDescription("Usuario al que quieres enviar un mensaje privado")
                 .setRequired(true)
         )
         .addStringOption(option =>
             option
                 .setName("message")
-                .setDescription("The message to send")
+                .setDescription("Mensaje que quieres enviar")
                 .setRequired(true)
         )
         .addBooleanOption(option =>
             option
                 .setName("anonymous")
-                .setDescription("Send the message anonymously (default: false)")
+                .setDescription("Enviar el mensaje de forma anónima (predeterminado: no)")
                 .setRequired(false)
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
@@ -33,7 +33,7 @@ export default {
     category: "moderation",
 
     async execute(interaction, config, client) {
-        const deferSuccess = await InteractionAyudaer.safeDefer(interaction);
+        const deferSuccess = await InteractionHelper.safeDefer(interaction);
         if (!deferSuccess) {
             logger.warn(`DM interaction defer failed`, {
                 userId: interaction.user.id,
@@ -43,23 +43,23 @@ export default {
             return;
         }
 
-    const targetUsar = interaction.options.getUsar("user");
+    const targetUser = interaction.options.getUser("user");
         const message = interaction.options.getString("message");
         const anonymous = interaction.options.getBoolean("anonymous") || false;
 
         try {
             
             if (message.length > 2000) {
-                return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Messages must be under 2000 characters.' });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'El mensaje debe tener menos de 2000 caracteres.' });
             }
 
-            if (targetUsar.bot) {
-                return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: 'You cannot send DMs to bot accounts.' });
+            if (targetUser.bot) {
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'No puedes enviar mensajes privados a cuentas de bots.' });
             }
 
             const sanitized = sanitizeMarkdown(message);
 
-            const dmChannel = await targetUsar.createDM();
+            const dmChannel = await targetUser.createDM();
             
             await dmChannel.send({
                 embeds: [
@@ -67,7 +67,7 @@ export default {
                         anonymous ? "Message from the Staff Team" : `Message from ${interaction.user.tag}`,
                         sanitized
                     ).setFooter({
-                        text: `You cannot reply to this message. | Logger ID: ${interaction.id}`
+                        text: `No puedes responder a este mensaje. | ID del registro: ${interaction.id}`
                     })
                 ]
             });
@@ -77,11 +77,11 @@ export default {
                 guild: interaction.guild,
                 event: {
                     action: "DM Sent",
-                    target: `${targetUsar.tag} (${targetUsar.id})`,
+                    target: `${targetUser.tag} (${targetUser.id})`,
                     executor: `${interaction.user.tag} (${interaction.user.id})`,
                     reason: `Anonymous: ${anonymous ? 'Yes' : 'No'}`,
                     metadata: {
-                        userId: targetUsar.id,
+                        userId: targetUser.id,
                         moderatorId: interaction.user.id,
                         anonymous,
                         messageLength: sanitized.length
@@ -89,11 +89,11 @@ export default {
                 }
             });
 
-            return await InteractionAyudaer.safeEditReply(interaction, {
+            return await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     successEmbed(
                         "DM Sent",
-                        `Successfully sent a message to ${targetUsar.tag}`
+                        `Se envió un mensaje a ${targetUser.tag}`
                     ),
                 ],
             });
@@ -101,10 +101,10 @@ export default {
             logger.error('DM command error:', error);
             
 if (error.code === 50007) {
-                return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: `Could not send a DM to ${targetUsar.tag}. They may have DMs disabled.` });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `No se pudo enviar un mensaje privado a ${targetUser.tag}. Es posible que tenga desactivados los mensajes directos.` });
             }
             
-            return await replyUsarError(interaction, { type: ErrorTypes.UNKNOWN, message: `Failed to send DM: ${error.message}` });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `No se pudo enviar el mensaje privado: ${error.message}` });
         }
     }
 };

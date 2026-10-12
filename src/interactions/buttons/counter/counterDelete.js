@@ -1,3 +1,3 @@
-import counterDeleteActionHandler from '../../../handlers/contarerButtons.js';
+import counterDeleteActionHandler from '../../../handlers/counterButtons.js';
 
 export default counterDeleteActionHandler;
